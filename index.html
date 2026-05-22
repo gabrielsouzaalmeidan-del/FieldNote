@@ -2815,7 +2815,7 @@ body.dark-mode .legenda-item { color: #86efac; }
   <div id="api-fetch-row" style="display:none;align-items:center;gap:8px;margin-bottom:8px">
     <button type="button" onclick="buscarDadosWeb()" id="btn-buscar-web"
       style="font-size:11px;padding:4px 10px;border-radius:99px;background:var(--branco);border:1px solid var(--borda);color:var(--verde-medio);cursor:pointer;font-weight:600">
-      🌐 Buscar GBIF + IUCN
+      🌐 Buscar CTFB · GBIF · iNat
     </button>
     <span id="api-fetch-status" style="font-size:11px;color:var(--texto-muted)"></span>
   </div>
@@ -4506,14 +4506,6 @@ body.dark-mode .legenda-item { color: #86efac; }
       <label>Token OAuth do Drive (access_token)</label>
       <input id="cfg-drive-token" type="password" placeholder="Cole o access_token OAuth2" oninput="salvarConfig()" />
       <div class="help-text">Autorize o app em <strong>developers.google.com/oauthplayground</strong> com escopo <code style="font-size:10px;">drive.file</code> e cole o token aqui.</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="config-item">
-      <label>🔑 Token IUCN Red List API (para status de conservação)</label>
-      <input id="cfg-iucn-token" type="password" placeholder="Cole seu token IUCN aqui..." oninput="salvarConfig()" />
-      <div class="help-text">Obtenha gratuitamente em <strong>api.iucnredlist.org</strong> → "Generate a token". Permite buscar automaticamente status de conservação global de qualquer espécie.</div>
     </div>
 
     <div class="divider"></div>
@@ -6554,8 +6546,7 @@ function salvarConfig() {
     drivefolder:document.getElementById('cfg-drive-folder')?.value || '',
     drivekey:   document.getElementById('cfg-drive-key')?.value    || '',
     drivetoken: document.getElementById('cfg-drive-token')?.value  || '',
-    apikey:     document.getElementById('cfg-api-key')?.value      || '',
-    iucnToken:  document.getElementById('cfg-iucn-token')?.value   || ''
+    apikey:     document.getElementById('cfg-api-key')?.value      || ''
   };
   localStorage.setItem(CFG_KEY, JSON.stringify(config));
   // Backup na IDB para não perder no APK
@@ -6596,7 +6587,7 @@ function irPara(panel, btn) {
       const fields = {
         'cfg-email': config.email, 'cfg-drive-id': config.driveId,
         'cfg-drive-token': config.driveToken, 'cfg-api-key': config.apiKey,
-        'cfg-iucn-token': config.iucnToken
+        // iucnToken removido
       };
       Object.entries(fields).forEach(([id, val]) => {
         const el = document.getElementById(id);
@@ -11476,10 +11467,9 @@ function filtrarMapa(filtro, chip) {
 
 
 // ══════════════════════════════════════════════════════════════════
-// GBIF + IUCN: busca automática de dados de conservação e distribuição
+// GBIF + CTFB + iNaturalist: busca automática — sem token necessário
 // ══════════════════════════════════════════════════════════════════
 
-// Cache em memória para evitar chamadas repetidas
 const _apiCache = {};
 
 async function buscarDadosWeb() {
@@ -11493,390 +11483,176 @@ async function buscarDadosWeb() {
   if (statusEl) statusEl.textContent = '🔍 Buscando...';
 
   try {
-    // Buscar em paralelo GBIF e IUCN
-    const [gbifData, iucnData] = await Promise.allSettled([
+    // Buscar nas 3 fontes em paralelo
+    const [gbifRes, ctfbRes, inatRes] = await Promise.allSettled([
       buscarGBIF(especie),
-      buscarIUCN(especie)
+      buscarCTFB(especie),
+      buscarInat(especie)
     ]);
 
-    let msgs = [];
-    let badgesAdicionar = [];
+    const badgesNovos = [];
+    const msgs = [];
 
-    // ── Processar GBIF ──────────────────────────────────────────
-    if (gbifData.status === 'fulfilled' && gbifData.value) {
-      const g = gbifData.value;
+    // ── CTFB (Catálogo Taxonômico Fauna Brasil) ─────────────────
+    if (ctfbRes.status === 'fulfilled' && ctfbRes.value) {
+      const c = ctfbRes.value;
 
-      // Atualizar ocorrência CE no currentMatch
       if (window.acCurrentMatch) {
-        window.acCurrentMatch._ce_gbif = g.ocorreCE ? 'CE' : '';
-        window.acCurrentMatch._estados = g.estados || '';
-        if (g.ocorreCE && !window.acCurrentMatch._ce) {
+        if (c.statusBR)  window.acCurrentMatch._mma     = c.statusBR;
+        if (c.statusIUCN)window.acCurrentMatch._iucn    = c.statusIUCN;
+        if (c.biomas)    window.acCurrentMatch._bioma   = c.biomas;
+        if (c.estados)   window.acCurrentMatch._estados = c.estados;
+        if (c.endemismo) window.acCurrentMatch._endem   = c.endemismo;
+        if (c.estados && c.estados.includes('CE'))
           window.acCurrentMatch._ce = 'CE';
+      }
+
+      // Badge status nacional
+      if (c.statusBR) {
+        const cor = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[c.statusBR] || '#6b7280';
+        badgesNovos.push(`<span class="cons-badge" style="background:${cor}15;color:${cor};border-color:${cor}40">🇧🇷 CTFB ${c.statusBR}</span>`);
+      }
+      // Badge IUCN via CTFB
+      if (c.statusIUCN) {
+        const cor = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[c.statusIUCN] || '#6b7280';
+        badgesNovos.push(`<span class="cons-badge" style="background:${cor}15;color:${cor};border-color:${cor}40">🌍 IUCN ${c.statusIUCN}</span>`);
+      }
+      // Badge biomas
+      if (c.biomas) {
+        badgesNovos.push(`<span class="cons-badge" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">🌿 ${c.biomas}</span>`);
+      }
+      // Badge estados / CE
+      if (c.estados) {
+        const temCE = c.estados.includes('CE');
+        if (temCE) {
+          badgesNovos.push(`<span class="cons-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">📍 CTFB: CE ✓</span>`);
+        } else {
+          badgesNovos.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">🗺️ ${c.estados.split(',').slice(0,5).join(', ')}</span>`);
         }
       }
-
-      // Badges
-      if (g.ocorreCE) {
-        badgesAdicionar.push(`<span class="cons-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">📍 GBIF: CE confirmado (${g.totalCE} reg.)</span>`);
-      } else if (g.totalBR > 0) {
-        badgesAdicionar.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">🗺️ GBIF: ${g.totalBR} reg. no Brasil</span>`);
+      // Badge endemismo
+      if (c.endemismo && c.endemismo !== 'Não endêmica' && c.endemismo !== 'false') {
+        badgesNovos.push(`<span class="cons-badge" style="background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff">🦎 ${c.endemismo}</span>`);
       }
-
-      if (g.estados) {
-        badgesAdicionar.push(`<span class="cons-badge" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">🌎 ${g.estados}</span>`);
-      }
-
-      msgs.push(`GBIF: ${g.totalBR} registros BR`);
+      msgs.push(`CTFB: ${c.statusBR || c.statusIUCN || 'ok'}`);
     }
 
-    // ── Processar IUCN ──────────────────────────────────────────
-    if (iucnData.status === 'fulfilled' && iucnData.value) {
-      const iu = iucnData.value;
-
+    // ── GBIF (distribuição + ocorrências) ───────────────────────
+    if (gbifRes.status === 'fulfilled' && gbifRes.value) {
+      const g = gbifRes.value;
       if (window.acCurrentMatch) {
-        if (iu.categoria) window.acCurrentMatch._iucn = iu.categoria;
-        if (iu.habitats)  window.acCurrentMatch._habitats = iu.habitats;
-        if (iu.tendencia) window.acCurrentMatch._tendencia = iu.tendencia;
+        if (g.ocorreCE) window.acCurrentMatch._ce = 'CE';
       }
-
-      const corIUCN = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[iu.categoria] || '#6b7280';
-
-      if (iu.categoria) {
-        badgesAdicionar.push(`<span class="cons-badge" style="background:${corIUCN}15;color:${corIUCN};border-color:${corIUCN}40">🌍 IUCN ${iu.categoria} (atualizado)</span>`);
+      if (g.ocorreCE && g.totalCE > 0) {
+        badgesNovos.push(`<span class="cons-badge" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📊 GBIF: ${g.totalCE} reg. no CE</span>`);
+      } else if (g.totalBR > 0 && !(ctfbRes.value?.estados?.includes('CE'))) {
+        badgesNovos.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">📊 GBIF: ${g.totalBR} reg. no BR</span>`);
       }
-      if (iu.tendencia) {
-        const tendIcon = {Decreasing:'📉',Increasing:'📈',Stable:'➡️',Unknown:'❓'}[iu.tendencia] || '❓';
-        badgesAdicionar.push(`<span class="cons-badge" style="background:#f9fafb;color:#374151;border-color:#e5e7eb">${tendIcon} ${iu.tendencia}</span>`);
-      }
-      if (iu.habitats) {
-        badgesAdicionar.push(`<span class="cons-badge" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">🏕️ ${iu.habitats.slice(0,40)}</span>`);
-      }
-
-      msgs.push(`IUCN: ${iu.categoria || 'obtido'}`);
-    } else if (iucnData.status === 'rejected') {
-      if (iucnData.reason?.message?.includes('token')) {
-        msgs.push('IUCN: token não configurado');
-      }
+      msgs.push(`GBIF: ${g.totalBR} reg.`);
     }
 
-    // Adicionar badges à área de conservação
+    // ── iNaturalist (obs. cidadã + status) ─────────────────────
+    if (inatRes.status === 'fulfilled' && inatRes.value) {
+      const n = inatRes.value;
+      if (n.obsCE > 0) {
+        badgesNovos.push(`<span class="cons-badge" style="background:#ecfdf5;color:#065f46;border-color:#6ee7b7">🔭 iNat: ${n.obsCE} obs. no CE</span>`);
+      }
+      if (n.ameacado) {
+        badgesNovos.push(`<span class="cons-badge" style="background:#fef2f2;color:#991b1b;border-color:#fca5a5">⚠️ iNat: ameaçada</span>`);
+      }
+      msgs.push(`iNat: ${n.obsCE} obs. CE`);
+    }
+
+    // Adicionar badges
     const badgeArea = document.getElementById('conservation-badges');
-    if (badgeArea && badgesAdicionar.length > 0) {
-      badgeArea.innerHTML += ' ' + badgesAdicionar.join(' ');
+    if (badgeArea && badgesNovos.length > 0) {
+      badgeArea.innerHTML += ' ' + badgesNovos.join(' ');
     }
 
-    if (statusEl) statusEl.textContent = msgs.length > 0 ? '✓ ' + msgs.join(' · ') : '— sem dados novos';
+    if (statusEl) statusEl.textContent = msgs.length > 0
+      ? '✓ ' + msgs.join(' · ')
+      : '— sem dados adicionais encontrados';
 
   } catch(e) {
     console.error('buscarDadosWeb:', e);
-    if (statusEl) statusEl.textContent = '⚠️ ' + (e.message || 'Erro de conexão');
+    if (statusEl) statusEl.textContent = '⚠️ ' + (navigator.onLine ? e.message : 'Sem conexão');
   } finally {
     if (btnEl) btnEl.disabled = false;
   }
 }
 
 async function buscarGBIF(especie) {
-  // Cache
-  const cacheKey = 'gbif:' + especie.toLowerCase();
-  if (_apiCache[cacheKey]) return _apiCache[cacheKey];
+  const key = 'gbif:' + especie.toLowerCase();
+  if (_apiCache[key]) return _apiCache[key];
 
-  // 1. Encontrar taxonKey
-  const matchUrl = `https://api.gbif.org/v1/species/match?name=${encodeURIComponent(especie)}&kingdom=Animalia`;
-  const matchRes  = await fetch(matchUrl);
-  if (!matchRes.ok) throw new Error('GBIF species/match falhou');
-  const matchData = await matchRes.json();
+  const match = await fetch(
+    `https://api.gbif.org/v1/species/match?name=${encodeURIComponent(especie)}&kingdom=Animalia`
+  ).then(r => r.json());
+  if (!match.usageKey) return null;
 
-  if (!matchData.usageKey) return null;
-  const taxonKey = matchData.usageKey;
-
-  // 2. Buscar ocorrências no Brasil
-  const brUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&limit=0`;
-  const brRes  = await fetch(brUrl);
-  const brData = brRes.ok ? await brRes.json() : { count: 0 };
-
-  // 3. Buscar ocorrências no Ceará
-  const ceUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&stateProvince=Cear%C3%A1&limit=0`;
-  const ceRes  = await fetch(ceUrl);
-  const ceData = ceRes.ok ? await ceRes.json() : { count: 0 };
-
-  // 4. Buscar distribuição por estado (facets)
-  const facetUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&limit=0&facet=stateProvince&facetLimit=10`;
-  const facetRes  = await fetch(facetUrl);
-  const facetData = facetRes.ok ? await facetRes.json() : {};
-
-  // Extrair estados
-  let estados = '';
-  if (facetData.facets && facetData.facets.length > 0) {
-    const estadosFacet = facetData.facets[0]?.counts || [];
-    estados = estadosFacet
-      .slice(0, 6)
-      .map(f => f.name.split(' ').map(w => w[0]).join(''))  // sigla
-      .join(', ');
-  }
+  const [brRes, ceRes] = await Promise.all([
+    fetch(`https://api.gbif.org/v1/occurrence/search?taxonKey=${match.usageKey}&country=BR&limit=0`).then(r=>r.json()),
+    fetch(`https://api.gbif.org/v1/occurrence/search?taxonKey=${match.usageKey}&country=BR&stateProvince=Cear%C3%A1&limit=0`).then(r=>r.json())
+  ]);
 
   const result = {
-    taxonKey,
-    totalBR:   brData.count || 0,
-    totalCE:   ceData.count || 0,
-    ocorreCE:  (ceData.count || 0) > 0,
-    estados
+    taxonKey: match.usageKey,
+    totalBR:  brRes.count  || 0,
+    totalCE:  ceRes.count  || 0,
+    ocorreCE: (ceRes.count || 0) > 0
   };
-
-  _apiCache[cacheKey] = result;
+  _apiCache[key] = result;
   return result;
 }
 
-async function buscarIUCN(especie) {
-  // Verificar token
-  const token = config.iucnToken || '';
-  if (!token) throw new Error('token IUCN não configurado');
+async function buscarCTFB(especie) {
+  const key = 'ctfb:' + especie.toLowerCase();
+  if (_apiCache[key]) return _apiCache[key];
 
-  // Cache
-  const cacheKey = 'iucn:' + especie.toLowerCase();
-  if (_apiCache[cacheKey]) return _apiCache[cacheKey];
-
-  // 1. Buscar espécie pelo nome
-  const url = `https://api.iucnredlist.org/api/v4/taxa/scientific_name/${encodeURIComponent(especie)}`;
+  // CTFB API REST — fauna.jbrj.gov.br
+  const url = `https://fauna.jbrj.gov.br/fauna/api/v1/species?q=${encodeURIComponent(especie)}&kingdom=Animalia`;
   const res  = await fetch(url, {
-    headers: { 'Authorization': `Token ${token}` }
+    headers: { 'Accept': 'application/json', 'User-Agent': 'WildLog/2.1' }
   });
-
-  if (res.status === 401) throw new Error('token IUCN inválido ou expirado');
-  if (!res.ok) throw new Error(`IUCN API: ${res.status}`);
-
+  if (!res.ok) throw new Error(`CTFB: ${res.status}`);
   const data = await res.json();
-  if (!data.assessments || data.assessments.length === 0) return null;
 
-  // Pegar o assessment mais recente
-  const assessment = data.assessments[0];
-  const categoria  = assessment.red_list_category?.code || '';
+  const sp = (data.species || data.results || data)[0];
+  if (!sp) return null;
 
-  // 2. Buscar detalhes do assessment (habitats, tendência)
-  let habitats = '', tendencia = '';
-  try {
-    const detUrl = `https://api.iucnredlist.org/api/v4/assessment/${assessment.assessment_id}`;
-    const detRes  = await fetch(detUrl, {
-      headers: { 'Authorization': `Token ${token}` }
-    });
-    if (detRes.ok) {
-      const det = await detRes.json();
-      // Habitats
-      const habList = det.habitats?.map(h => h.description?.split(' ')[0]).filter(Boolean) || [];
-      habitats = habList.slice(0, 3).join(', ');
-      // Tendência populacional
-      tendencia = det.population_trend?.description || '';
-    }
-  } catch(e) {
-    // Detalhes opcionais — continuar sem eles
-  }
+  // Normalizar campos (a API CTFB pode variar)
+  const statusBR   = sp.threatStatusBrazil || sp.brazilianRedListStatus || sp.statusBR || '';
+  const statusIUCN = sp.threatStatusIUCN   || sp.iucnStatus             || sp.statusIUCN || '';
+  const biomas     = Array.isArray(sp.biome) ? sp.biome.map(b =>
+    ({Amazônia:'Am',Caatinga:'Ca',Cerrado:'Ce','Mata Atlântica':'MA',Pantanal:'Pa',Pampa:'Pm'}[b]||b)
+  ).join(',') : (sp.biome || '');
+  const estados    = Array.isArray(sp.states) ? sp.states.join(',') : (sp.states || '');
+  const endemismo  = sp.endemism || sp.endemismo || '';
 
-  const result = { categoria, habitats, tendencia };
-  _apiCache[cacheKey] = result;
+  const result = { statusBR, statusIUCN, biomas, estados, endemismo };
+  _apiCache[key] = result;
   return result;
 }
 
-</script>
+async function buscarInat(especie) {
+  const key = 'inat:' + especie.toLowerCase();
+  if (_apiCache[key]) return _apiCache[key];
 
-<!-- BARRA STATUS SALVO -->
-<div id="save-status">💾 salvando...</div>
+  // iNaturalist: dados da espécie + observações no Ceará
+  const [taxaRes, obsRes] = await Promise.all([
+    fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(especie)}&rank=species&per_page=1`)
+      .then(r => r.json()),
+    fetch(`https://api.inaturalist.org/v1/observations?taxon_name=${encodeURIComponent(especie)}&place_id=7155&per_page=0`)
+      .then(r => r.json())
+  ]);
 
-<!-- BARRA BACKUP AUTOMÁTICO -->
-<div id="backup-bar">
-  <div class="backup-msg">💾 <strong>Backup sugerido</strong><br>Salve seus dados localmente</div>
-  <button class="backup-btn" onclick="baixarBackupJSON()">📥 Salvar JSON</button>
-  <button class="backup-close" onclick="document.getElementById('backup-bar').classList.remove('show')">✕</button>
-</div>
+  const taxon   = (taxaRes.results || [])[0] || {};
+  const obsCE   = obsRes.total_results || 0;
+  const ameacado = taxon.threatened || false;
+  const consStatus = taxon.conservation_status?.status?.toUpperCase() || '';
 
-<!-- INDICADOR ONLINE/OFFLINE -->
-<div id="network-badge" class="online">● ONLINE</div>
+  const result = { obsCE, ameacado, consStatus };
+  _apiCache[key] = result;
+  return result;
+}
 
-<!-- LIGHTBOX -->
-<div class="lightbox-overlay" id="lightbox" onclick="fecharLightbox()">
-  <button class="lightbox-close" onclick="fecharLightbox()">✕</button>
-  <img class="lightbox-img" id="lightbox-img" src="" alt="Foto do registro"/>
-</div>
-
-<!-- CAPTURA RÁPIDA FAB -->
-<div class="quick-fab-label">⚡ RÁPIDA</div>
-<button class="quick-fab" onclick="abrirRapida()" title="Captura rápida">⚡</button>
-
-<!-- MODAL CAPTURA RÁPIDA -->
-<div class="quick-modal-overlay" id="qc-overlay" onclick="fecharRapida()"></div>
-<div class="quick-sheet" id="qc-sheet">
-  <div class="quick-sheet-handle"></div>
-  <div class="quick-sheet-header">
-    <span>⚡ Captura Rápida</span>
-    <button class="quick-close-btn" onclick="fecharRapida()">✕</button>
-  </div>
-  <div class="quick-body">
-    <div class="quick-group-tabs" id="qc-tabs">
-      <button class="quick-gtab active" onclick="qcSetGrupo('Avifauna',this)">🐦 Ave</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Mastofauna',this)">🐾 Masto</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Herpetofauna',this)">🦎 Herpe</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Ictiofauna',this)">🐟 Ictio</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Quiropterofauna',this)">🦇 Quiro</button>
-    </div>
-
-    <div class="field-group">
-      <label>Espécie *</label>
-      <div class="ac-wrapper">
-        <div class="ac-inline" id="qc-ac-inline" aria-hidden="true">
-          <span id="qc-ac-typed"></span><span id="qc-ac-ghost" style="opacity:.4"></span>
-        </div>
-        <input id="qc-especie" placeholder="Nome científico ou popular..."
-          autocomplete="off" spellcheck="false"
-          oninput="acOnInputBio('qc',this.value)"
-          onkeydown="acOnKeydownBio('qc',event)"
-          onblur="setTimeout(()=>acCloseBio('qc'),180)"
-          onfocus="acOnInputBio('qc',this.value)"/>
-        <div class="ac-dropdown" id="qc-ac-dropdown"></div>
-      </div>
-    </div>
-
-    <div class="field-row">
-      <div class="field-group"><label>Sexo</label>
-        <select id="qc-sexo"><option value="">—</option><option>Macho</option><option>Fêmea</option><option>Indet.</option></select>
-      </div>
-      <div class="field-group"><label>Anilha / Marca</label>
-        <input id="qc-anilha" placeholder="A-0001"/>
-      </div>
-    </div>
-
-    <div id="qc-medidas-grid" class="bio-measure-grid"></div>
-
-    <div class="gps-group field-group">
-      <label>Coordenadas UTM</label>
-      <div class="gps-bar">
-        <div class="gps-input-wrap">
-          <input id="qc-coord" placeholder="UTM auto ou manual" autocomplete="off"/>
-        </div>
-        <button class="btn-gps" data-gps="qc-coord"
-          onclick="captureGps('qc-coord','qc-coord-meta','qc-coord-detail')"
-          title="GPS">📡</button>
-      </div>
-      <div class="gps-meta" id="qc-coord-meta"></div>
-      <div class="gps-progress" id="qc-coord-progress"><div class="gps-progress-fill" id="qc-coord-fill"></div></div>
-      <div class="gps-detail" id="qc-coord-detail"></div>
-    </div>
-
-    <div class="field-group">
-      <label>📷 Foto rápida</label>
-      <div class="foto-preview-wrap" id="qc-foto-wrap">
-        <img class="foto-preview" id="qc-foto-preview" src="" alt=""/>
-        <button class="foto-del-btn" onclick="qcRemoverFoto()">✕</button>
-      </div>
-      <div class="foto-zone" onclick="document.getElementById('qc-foto-input').click()">
-        <div class="foto-zone-icon">📷</div>
-        <div class="foto-zone-txt">Tirar foto ou escolher da galeria</div>
-        <input type="file" id="qc-foto-input" accept="image/*" capture="environment"
-          style="display:none" onchange="qcHandleFoto(event)"/>
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label>Observação rápida</label>
-      <textarea id="qc-obs" placeholder="Comportamento, condição, habitat..." rows="2"></textarea>
-    </div>
-
-    <div class="alert" id="qc-alert"></div>
-    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="salvarRapida()">
-      ⚡ Salvar e continuar
-    </button>
-  </div>
-</div>
-
-<!-- MODAL VALIDAÇÃO -->
-<div class="val-modal-overlay" id="val-modal-overlay">
-  <div class="val-modal">
-    <div class="val-modal-icon">⚠️</div>
-    <div class="val-modal-title">Valores improváveis detectados</div>
-    <div class="val-modal-body">
-      Os campos abaixo estão fora das faixas esperadas para este grupo taxonômico.
-      Verifique antes de salvar.
-    </div>
-    <div class="val-modal-list" id="val-modal-list"></div>
-    <div class="val-btn-row">
-      <button class="val-btn-corrigir" onclick="fecharValModal()">✏️ Corrigir</button>
-      <button class="val-btn-salvar"   onclick="salvarMesmoAssim()">Salvar assim mesmo</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PERMISSÃO GPS -->
-<div class="perm-modal-overlay" id="perm-modal-overlay" onclick="fecharPermModal()">
-  <div class="perm-modal" onclick="event.stopPropagation()">
-    <div class="perm-icon">📍</div>
-    <div class="perm-title">Liberar acesso à localização</div>
-    <div class="perm-desc" id="perm-desc">
-      O app precisa de acesso à sua localização para capturar as coordenadas UTM em campo.
-    </div>
-
-    <!-- Instruções Android Chrome -->
-    <div class="perm-steps perm-os-android" id="perm-steps-android">
-      <div class="perm-step">
-        <span class="perm-step-num">1</span>
-        <span>Toque no ícone <strong>🔒</strong> ou <strong>ⓘ</strong> na barra de endereço do Chrome</span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">2</span>
-        <span>Toque em <strong>Permissões</strong></span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">3</span>
-        <span>Em <strong>Localização</strong>, selecione <strong>Permitir</strong></span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">4</span>
-        <span>Recarregue a página e toque em 📡 novamente</span>
-      </div>
-    </div>
-
-    <!-- Instruções iOS Safari -->
-    <div class="perm-steps perm-os-ios" id="perm-steps-ios">
-      <div class="perm-step">
-        <span class="perm-step-num">1</span>
-        <span>Abra <strong>Ajustes</strong> no iPhone/iPad</span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">2</span>
-        <span>Role até <strong>Safari</strong> e toque</span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">3</span>
-        <span>Toque em <strong>Localização</strong> → selecione <strong>Perguntar</strong> ou <strong>Permitir</strong></span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">4</span>
-        <span>Volte ao app e toque em 📡 novamente</span>
-      </div>
-    </div>
-
-    <!-- Instruções Desktop Chrome/Edge -->
-    <div class="perm-steps perm-os-desktop" id="perm-steps-desktop">
-      <div class="perm-step">
-        <span class="perm-step-num">1</span>
-        <span>Clique no ícone <strong>🔒</strong> na barra de endereço</span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">2</span>
-        <span>Clique em <strong>Configurações do site</strong></span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">3</span>
-        <span>Em <strong>Localização</strong>, mude de <strong>Bloqueado</strong> para <strong>Permitir</strong></span>
-      </div>
-      <div class="perm-step">
-        <span class="perm-step-num">4</span>
-        <span>Recarregue a página e toque em 📡 novamente</span>
-      </div>
-    </div>
-
-    <div class="perm-btn-row">
-      <button class="perm-btn-main" onclick="tentarGpsAposModal()">✓ Já liberei — tentar novamente</button>
-      <button class="perm-btn-sec"  onclick="fecharPermModal()">Fechar</button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
