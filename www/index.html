@@ -2811,7 +2811,14 @@ body.dark-mode .legenda-item { color: #86efac; }
             <option>Observação embarcada</option>
           </select>
       </div>
-    <div id="conservation-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px;min-height:0"></div>
+    <div id="conservation-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px;min-height:0"></div>
+  <div id="api-fetch-row" style="display:none;align-items:center;gap:8px;margin-bottom:8px">
+    <button type="button" onclick="buscarDadosWeb()" id="btn-buscar-web"
+      style="font-size:11px;padding:4px 10px;border-radius:99px;background:var(--branco);border:1px solid var(--borda);color:var(--verde-medio);cursor:pointer;font-weight:600">
+      🌐 Buscar GBIF + IUCN
+    </button>
+    <span id="api-fetch-status" style="font-size:11px;color:var(--texto-muted)"></span>
+  </div>
 
   <div class="field-group" id="manual-tipo-group">
         <label>Tipo de registro</label>
@@ -4504,6 +4511,14 @@ body.dark-mode .legenda-item { color: #86efac; }
     <div class="divider"></div>
 
     <div class="config-item">
+      <label>🔑 Token IUCN Red List API (para status de conservação)</label>
+      <input id="cfg-iucn-token" type="password" placeholder="Cole seu token IUCN aqui..." oninput="salvarConfig()" />
+      <div class="help-text">Obtenha gratuitamente em <strong>api.iucnredlist.org</strong> → "Generate a token". Permite buscar automaticamente status de conservação global de qualquer espécie.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="config-item">
       <label>Chave de API Anthropic (para escaneamento por IA)</label>
       <input id="cfg-api-key" type="password" placeholder="sk-ant-..." oninput="salvarConfig()" />
       <div class="help-text">Gere em <strong>console.anthropic.com</strong>. Usada apenas quando houver internet para interpretar suas anotações fotografadas.</div>
@@ -5985,6 +6000,11 @@ function autoFillFromSpecies(s) {
 
   renderStatusChips(s);
   toast('✓ ' + s.cl + ' · ' + s.fa);
+  // Mostrar botão de busca online
+  const fetchRow = document.getElementById('api-fetch-row');
+  if (fetchRow) fetchRow.style.display = 'flex';
+  const fetchStatus = document.getElementById('api-fetch-status');
+  if (fetchStatus) fetchStatus.textContent = '';
 }
 
 function getChipClass(v) {
@@ -6530,11 +6550,12 @@ async function init() {
 
 function salvarConfig() {
   config = {
-    email: document.getElementById('cfg-email').value,
-    drivefolder: document.getElementById('cfg-drive-folder').value,
-    drivekey: document.getElementById('cfg-drive-key').value,
-    drivetoken: document.getElementById('cfg-drive-token').value,
-    apikey: document.getElementById('cfg-api-key').value
+    email:      document.getElementById('cfg-email')?.value        || '',
+    drivefolder:document.getElementById('cfg-drive-folder')?.value || '',
+    drivekey:   document.getElementById('cfg-drive-key')?.value    || '',
+    drivetoken: document.getElementById('cfg-drive-token')?.value  || '',
+    apikey:     document.getElementById('cfg-api-key')?.value      || '',
+    iucnToken:  document.getElementById('cfg-iucn-token')?.value   || ''
   };
   localStorage.setItem(CFG_KEY, JSON.stringify(config));
   // Backup na IDB para não perder no APK
@@ -6568,6 +6589,20 @@ function irPara(panel, btn) {
   if (panel === 'dashboard') { atualizarDashInicio(); renderDashboard(); }
   if (panel === 'mapa') {
     setTimeout(() => renderMapa(), 50);
+  }
+  if (panel === 'enviar') {
+    // Popular campos de config com valores salvos
+    setTimeout(() => {
+      const fields = {
+        'cfg-email': config.email, 'cfg-drive-id': config.driveId,
+        'cfg-drive-token': config.driveToken, 'cfg-api-key': config.apiKey,
+        'cfg-iucn-token': config.iucnToken
+      };
+      Object.entries(fields).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      });
+    }, 100);
   }
   if (panel === 'manual') {
     const mel = document.getElementById('m-metodo');
@@ -11437,6 +11472,207 @@ function filtrarMapa(filtro, chip) {
   document.querySelectorAll('#mapa-filtros .filtro-chip').forEach(c => c.classList.remove('ativo'));
   if (chip) chip.classList.add('ativo');
   renderMapa();
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// GBIF + IUCN: busca automática de dados de conservação e distribuição
+// ══════════════════════════════════════════════════════════════════
+
+// Cache em memória para evitar chamadas repetidas
+const _apiCache = {};
+
+async function buscarDadosWeb() {
+  const especie = (document.getElementById('m-especie')?.value || '').trim();
+  if (!especie) return;
+
+  const statusEl = document.getElementById('api-fetch-status');
+  const btnEl    = document.getElementById('btn-buscar-web');
+
+  if (btnEl)    btnEl.disabled = true;
+  if (statusEl) statusEl.textContent = '🔍 Buscando...';
+
+  try {
+    // Buscar em paralelo GBIF e IUCN
+    const [gbifData, iucnData] = await Promise.allSettled([
+      buscarGBIF(especie),
+      buscarIUCN(especie)
+    ]);
+
+    let msgs = [];
+    let badgesAdicionar = [];
+
+    // ── Processar GBIF ──────────────────────────────────────────
+    if (gbifData.status === 'fulfilled' && gbifData.value) {
+      const g = gbifData.value;
+
+      // Atualizar ocorrência CE no currentMatch
+      if (window.acCurrentMatch) {
+        window.acCurrentMatch._ce_gbif = g.ocorreCE ? 'CE' : '';
+        window.acCurrentMatch._estados = g.estados || '';
+        if (g.ocorreCE && !window.acCurrentMatch._ce) {
+          window.acCurrentMatch._ce = 'CE';
+        }
+      }
+
+      // Badges
+      if (g.ocorreCE) {
+        badgesAdicionar.push(`<span class="cons-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">📍 GBIF: CE confirmado (${g.totalCE} reg.)</span>`);
+      } else if (g.totalBR > 0) {
+        badgesAdicionar.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">🗺️ GBIF: ${g.totalBR} reg. no Brasil</span>`);
+      }
+
+      if (g.estados) {
+        badgesAdicionar.push(`<span class="cons-badge" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">🌎 ${g.estados}</span>`);
+      }
+
+      msgs.push(`GBIF: ${g.totalBR} registros BR`);
+    }
+
+    // ── Processar IUCN ──────────────────────────────────────────
+    if (iucnData.status === 'fulfilled' && iucnData.value) {
+      const iu = iucnData.value;
+
+      if (window.acCurrentMatch) {
+        if (iu.categoria) window.acCurrentMatch._iucn = iu.categoria;
+        if (iu.habitats)  window.acCurrentMatch._habitats = iu.habitats;
+        if (iu.tendencia) window.acCurrentMatch._tendencia = iu.tendencia;
+      }
+
+      const corIUCN = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[iu.categoria] || '#6b7280';
+
+      if (iu.categoria) {
+        badgesAdicionar.push(`<span class="cons-badge" style="background:${corIUCN}15;color:${corIUCN};border-color:${corIUCN}40">🌍 IUCN ${iu.categoria} (atualizado)</span>`);
+      }
+      if (iu.tendencia) {
+        const tendIcon = {Decreasing:'📉',Increasing:'📈',Stable:'➡️',Unknown:'❓'}[iu.tendencia] || '❓';
+        badgesAdicionar.push(`<span class="cons-badge" style="background:#f9fafb;color:#374151;border-color:#e5e7eb">${tendIcon} ${iu.tendencia}</span>`);
+      }
+      if (iu.habitats) {
+        badgesAdicionar.push(`<span class="cons-badge" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">🏕️ ${iu.habitats.slice(0,40)}</span>`);
+      }
+
+      msgs.push(`IUCN: ${iu.categoria || 'obtido'}`);
+    } else if (iucnData.status === 'rejected') {
+      if (iucnData.reason?.message?.includes('token')) {
+        msgs.push('IUCN: token não configurado');
+      }
+    }
+
+    // Adicionar badges à área de conservação
+    const badgeArea = document.getElementById('conservation-badges');
+    if (badgeArea && badgesAdicionar.length > 0) {
+      badgeArea.innerHTML += ' ' + badgesAdicionar.join(' ');
+    }
+
+    if (statusEl) statusEl.textContent = msgs.length > 0 ? '✓ ' + msgs.join(' · ') : '— sem dados novos';
+
+  } catch(e) {
+    console.error('buscarDadosWeb:', e);
+    if (statusEl) statusEl.textContent = '⚠️ ' + (e.message || 'Erro de conexão');
+  } finally {
+    if (btnEl) btnEl.disabled = false;
+  }
+}
+
+async function buscarGBIF(especie) {
+  // Cache
+  const cacheKey = 'gbif:' + especie.toLowerCase();
+  if (_apiCache[cacheKey]) return _apiCache[cacheKey];
+
+  // 1. Encontrar taxonKey
+  const matchUrl = `https://api.gbif.org/v1/species/match?name=${encodeURIComponent(especie)}&kingdom=Animalia`;
+  const matchRes  = await fetch(matchUrl);
+  if (!matchRes.ok) throw new Error('GBIF species/match falhou');
+  const matchData = await matchRes.json();
+
+  if (!matchData.usageKey) return null;
+  const taxonKey = matchData.usageKey;
+
+  // 2. Buscar ocorrências no Brasil
+  const brUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&limit=0`;
+  const brRes  = await fetch(brUrl);
+  const brData = brRes.ok ? await brRes.json() : { count: 0 };
+
+  // 3. Buscar ocorrências no Ceará
+  const ceUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&stateProvince=Cear%C3%A1&limit=0`;
+  const ceRes  = await fetch(ceUrl);
+  const ceData = ceRes.ok ? await ceRes.json() : { count: 0 };
+
+  // 4. Buscar distribuição por estado (facets)
+  const facetUrl = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&country=BR&limit=0&facet=stateProvince&facetLimit=10`;
+  const facetRes  = await fetch(facetUrl);
+  const facetData = facetRes.ok ? await facetRes.json() : {};
+
+  // Extrair estados
+  let estados = '';
+  if (facetData.facets && facetData.facets.length > 0) {
+    const estadosFacet = facetData.facets[0]?.counts || [];
+    estados = estadosFacet
+      .slice(0, 6)
+      .map(f => f.name.split(' ').map(w => w[0]).join(''))  // sigla
+      .join(', ');
+  }
+
+  const result = {
+    taxonKey,
+    totalBR:   brData.count || 0,
+    totalCE:   ceData.count || 0,
+    ocorreCE:  (ceData.count || 0) > 0,
+    estados
+  };
+
+  _apiCache[cacheKey] = result;
+  return result;
+}
+
+async function buscarIUCN(especie) {
+  // Verificar token
+  const token = config.iucnToken || '';
+  if (!token) throw new Error('token IUCN não configurado');
+
+  // Cache
+  const cacheKey = 'iucn:' + especie.toLowerCase();
+  if (_apiCache[cacheKey]) return _apiCache[cacheKey];
+
+  // 1. Buscar espécie pelo nome
+  const url = `https://api.iucnredlist.org/api/v4/taxa/scientific_name/${encodeURIComponent(especie)}`;
+  const res  = await fetch(url, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+
+  if (res.status === 401) throw new Error('token IUCN inválido ou expirado');
+  if (!res.ok) throw new Error(`IUCN API: ${res.status}`);
+
+  const data = await res.json();
+  if (!data.assessments || data.assessments.length === 0) return null;
+
+  // Pegar o assessment mais recente
+  const assessment = data.assessments[0];
+  const categoria  = assessment.red_list_category?.code || '';
+
+  // 2. Buscar detalhes do assessment (habitats, tendência)
+  let habitats = '', tendencia = '';
+  try {
+    const detUrl = `https://api.iucnredlist.org/api/v4/assessment/${assessment.assessment_id}`;
+    const detRes  = await fetch(detUrl, {
+      headers: { 'Authorization': `Token ${token}` }
+    });
+    if (detRes.ok) {
+      const det = await detRes.json();
+      // Habitats
+      const habList = det.habitats?.map(h => h.description?.split(' ')[0]).filter(Boolean) || [];
+      habitats = habList.slice(0, 3).join(', ');
+      // Tendência populacional
+      tendencia = det.population_trend?.description || '';
+    }
+  } catch(e) {
+    // Detalhes opcionais — continuar sem eles
+  }
+
+  const result = { categoria, habitats, tendencia };
+  _apiCache[cacheKey] = result;
+  return result;
 }
 
 </script>
