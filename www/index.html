@@ -5403,13 +5403,13 @@ const SPECIES_DB = [
 {"cl":"Mammalia","or":"Cingulata","fa":"Chlamyphoridae","sp":"Cabassous tatouay","np":"Tatu-do-rabo-mole","ha":"","se":"","ca":"","gu":"","mm":"","iu":"LC","ci":"III","bi":"Ca,Ce,MA,Pm","en":"","ce":"CE"},
 {"cl":"Mammalia","or":"Cingulata","fa":"Chlamyphoridae","sp":"Tolypeutes tricinctus","np":"Tatu-bola","ha":"","se":"","ca":"","gu":"","mm":"EN","iu":"VU","ci":"-","bi":"Ca,Ce","en":"End.Brasil","ce":"CE"},
 {"cl":"Mammalia","or":"Pilosa","fa":"Myrmecophagidae","sp":"Tamandua tetradactyla","np":"Tamanduá-mirim, mambira","ha":"","se":"","ca":"","gu":"","mm":"","iu":"LC","ci":"-","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
-{"cl":"Mammalia","or":"Pilosa","fa":"Myrmecophagidae","sp":"Myrmecophaga tridactyla","np":"Tamanduá-bandeira","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"VU","ci":"II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
-{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Leopardus pardalis","np":"Jaguatirica","ha":"","se":"","ca":"","gu":"","mm":"","iu":"LC","ci":"I","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
+{"cl":"Mammalia","or":"Pilosa","fa":"Myrmecophagidae","sp":"Myrmecophaga tridactyla","np":"Tamanduá-bandeira","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"VU","cs":"VU","ci":"II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
+{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Leopardus pardalis","np":"Jaguatirica","ha":"","se":"","ca":"","gu":"","mm":"","iu":"LC","cs":"VU","ci":"I","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
 {"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Leopardus emiliae","np":"Gato-do-mato-pequeno","ha":"","se":"","ca":"","gu":"","mm":"","iu":"","ci":"-","bi":"Ca,Ce,Am,MA","en":"End.Brasil","ce":"CE"},
-{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Leopardus wiedii","np":"Gato-maracajá","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","ci":"I","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"End.Amazônia","ce":""},
-{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Puma concolor","np":"Onça parda, onça vermelha, onça bodeira, suçuarana","ha":"","se":"","ca":"","gu":"","mm":"NT","iu":"LC","ci":"I/II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
+{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Leopardus wiedii","np":"Gato-maracajá","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","cs":"VU","ci":"I","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"End.Amazônia","ce":""},
+{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Puma concolor","np":"Onça parda, onça vermelha, onça bodeira, suçuarana","ha":"","se":"","ca":"","gu":"","mm":"NT","iu":"LC","cs":"VU","ci":"I/II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
 {"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Herpailurus yagouaroundi","np":"Gato mourisco, gato vermelho, gato roxo","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"LC","ci":"I/II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
-{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Panthera onca","np":"Onça pintada","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","ci":"I","bi":"Ca,Ce,Am,MA,Pa","en":"","ce":""},
+{"cl":"Mammalia","or":"Carnivora","fa":"Felidae","sp":"Panthera onca","np":"Onça pintada","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","cs":"CR","ci":"I","bi":"Ca,Ce,Am,MA,Pa","en":"","ce":""},
 {"cl":"Mammalia","or":"Carnivora","fa":"Canidae","sp":"Cerdocyon thous","np":"Raposa, cachorro do mato","ha":"","se":"","ca":"","gu":"","mm":"","iu":"LC","ci":"II","bi":"Ca,Ce,Am,MA,Pa,Pm","en":"","ce":"CE"},
 {"cl":"Mammalia","or":"Carnivora","fa":"Canidae","sp":"Lycalopex vetulus","np":"Raposa, cachorro do mato","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","ci":"-","bi":"Ce","en":"End.Brasil","ce":""},
 {"cl":"Mammalia","or":"Carnivora","fa":"Canidae","sp":"Speothos venaticus","np":"Cachorro-vinagre, guaxinim vermelho","ha":"","se":"","ca":"","gu":"","mm":"VU","iu":"NT","ci":"I","bi":"Ce,Am,MA,Pa","en":"","ce":"CE"},
@@ -6075,8 +6075,9 @@ function renderStatusChips(s) {
     }
   }
 
-  if (s.mm && s.mm !== '' && s.mm !== '-') parts.push('<span class="status-chip ' + getChipClass(s.mm) + '">MMA 148/22: ' + s.mm + '</span>');
   if (s.iu && s.iu !== '' && s.iu !== '-') parts.push('<span class="status-chip ' + getChipClass(s.iu) + '">IUCN: ' + s.iu + '</span>');
+  if (s.mm && s.mm !== '' && s.mm !== '-') parts.push('<span class="status-chip ' + getChipClass(s.mm) + '">MMA 148/22: ' + s.mm + '</span>');
+  if (s.cs && s.cs !== '' && s.cs !== '-') parts.push('<span class="status-chip ' + getChipClass(s.cs) + '">CE: ' + s.cs + '</span>');
   if (s.ci && s.ci !== '' && s.ci !== '-') parts.push('<span class="status-chip chip-cites">CITES: ' + s.ci + '</span>');
   if (s.gu) parts.push('<span class="status-chip chip-na">🍽 ' + (_GU[s.gu] || s.gu) + '</span>');
   if (s.ha) parts.push('<span class="status-chip chip-na">🏕 ' + (_HA[s.ha] || s.ha) + '</span>');
