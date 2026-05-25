@@ -2812,13 +2812,7 @@ body.dark-mode .legenda-item { color: #86efac; }
           </select>
       </div>
     <div id="conservation-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px;min-height:0"></div>
-  <div id="api-fetch-row" style="display:none;align-items:center;gap:8px;margin-bottom:8px">
-    <button type="button" onclick="buscarDadosWeb()" id="btn-buscar-web"
-      style="font-size:11px;padding:4px 10px;border-radius:99px;background:var(--branco);border:1px solid var(--borda);color:var(--verde-medio);cursor:pointer;font-weight:600">
-      🌐 Buscar CTFB · GBIF · iNat
-    </button>
-    <span id="api-fetch-status" style="font-size:11px;color:var(--texto-muted)"></span>
-  </div>
+  <div id="api-fetch-status" style="font-size:10px;color:var(--texto-muted);margin-bottom:4px;min-height:0"></div>
 
   <div class="field-group" id="manual-tipo-group">
         <label>Tipo de registro</label>
@@ -5992,11 +5986,14 @@ function autoFillFromSpecies(s) {
 
   renderStatusChips(s);
   toast('✓ ' + s.cl + ' · ' + s.fa);
-  // Mostrar botão de busca online
-  const fetchRow = document.getElementById('api-fetch-row');
-  if (fetchRow) fetchRow.style.display = 'flex';
-  const fetchStatus = document.getElementById('api-fetch-status');
-  if (fetchStatus) fetchStatus.textContent = '';
+  // Buscar dados online automaticamente (GBIF + iNat) em background
+  if (navigator.onLine) {
+    const statusEl = document.getElementById('api-fetch-status');
+    if (statusEl) statusEl.textContent = '🔍 buscando distribuição...';
+    buscarDadosWeb().catch(() => {
+      if (statusEl) statusEl.textContent = '';
+    });
+  }
 }
 
 function getChipClass(v) {
@@ -11475,111 +11472,64 @@ const _apiCache = {};
 async function buscarDadosWeb() {
   const especie = (document.getElementById('m-especie')?.value || '').trim();
   if (!especie) return;
-
   const statusEl = document.getElementById('api-fetch-status');
-  const btnEl    = document.getElementById('btn-buscar-web');
-
-  if (btnEl)    btnEl.disabled = true;
-  if (statusEl) statusEl.textContent = '🔍 Buscando...';
 
   try {
-    // Buscar nas 3 fontes em paralelo
-    const [gbifRes, ctfbRes, inatRes] = await Promise.allSettled([
+    // Buscar GBIF e iNat em paralelo (sem CTFB — CORS sem proxy)
+    const [gbifRes, inatRes] = await Promise.allSettled([
       buscarGBIF(especie),
-      buscarCTFB(especie),
       buscarInat(especie)
     ]);
 
-    const badgesNovos = [];
-    const msgs = [];
+    const badgeArea = document.getElementById('conservation-badges');
+    if (!badgeArea) return;
 
-    // ── CTFB (Catálogo Taxonômico Fauna Brasil) ─────────────────
-    if (ctfbRes.status === 'fulfilled' && ctfbRes.value) {
-      const c = ctfbRes.value;
-
-      if (window.acCurrentMatch) {
-        if (c.statusBR)  window.acCurrentMatch._mma     = c.statusBR;
-        if (c.statusIUCN)window.acCurrentMatch._iucn    = c.statusIUCN;
-        if (c.biomas)    window.acCurrentMatch._bioma   = c.biomas;
-        if (c.estados)   window.acCurrentMatch._estados = c.estados;
-        if (c.endemismo) window.acCurrentMatch._endem   = c.endemismo;
-        if (c.estados && c.estados.includes('CE'))
-          window.acCurrentMatch._ce = 'CE';
-      }
-
-      // Badge status nacional
-      if (c.statusBR) {
-        const cor = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[c.statusBR] || '#6b7280';
-        badgesNovos.push(`<span class="cons-badge" style="background:${cor}15;color:${cor};border-color:${cor}40">🇧🇷 CTFB ${c.statusBR}</span>`);
-      }
-      // Badge IUCN via CTFB
-      if (c.statusIUCN) {
-        const cor = {CR:'#dc2626',EN:'#ea580c',VU:'#d97706',NT:'#65a30d',LC:'#16a34a',DD:'#6b7280'}[c.statusIUCN] || '#6b7280';
-        badgesNovos.push(`<span class="cons-badge" style="background:${cor}15;color:${cor};border-color:${cor}40">🌍 IUCN ${c.statusIUCN}</span>`);
-      }
-      // Badge biomas
-      if (c.biomas) {
-        badgesNovos.push(`<span class="cons-badge" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">🌿 ${c.biomas}</span>`);
-      }
-      // Badge estados / CE
-      if (c.estados) {
-        const temCE = c.estados.includes('CE');
-        if (temCE) {
-          badgesNovos.push(`<span class="cons-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">📍 CTFB: CE ✓</span>`);
-        } else {
-          badgesNovos.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">🗺️ ${c.estados.split(',').slice(0,5).join(', ')}</span>`);
-        }
-      }
-      // Badge endemismo
-      if (c.endemismo && c.endemismo !== 'Não endêmica' && c.endemismo !== 'false') {
-        badgesNovos.push(`<span class="cons-badge" style="background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff">🦎 ${c.endemismo}</span>`);
-      }
-      msgs.push(`CTFB: ${c.statusBR || c.statusIUCN || 'ok'}`);
-    }
-
-    // ── GBIF (distribuição + ocorrências) ───────────────────────
+    // ── GBIF ────────────────────────────────────────────────────
     if (gbifRes.status === 'fulfilled' && gbifRes.value) {
       const g = gbifRes.value;
       if (window.acCurrentMatch) {
         if (g.ocorreCE) window.acCurrentMatch._ce = 'CE';
       }
-      if (g.ocorreCE && g.totalCE > 0) {
-        badgesNovos.push(`<span class="cons-badge" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📊 GBIF: ${g.totalCE} reg. no CE</span>`);
-      } else if (g.totalBR > 0 && !(ctfbRes.value?.estados?.includes('CE'))) {
-        badgesNovos.push(`<span class="cons-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb">📊 GBIF: ${g.totalBR} reg. no BR</span>`);
+      // Remover badge CE anterior (local) se GBIF confirmar com número
+      const badgesAtuais = badgeArea.querySelectorAll('.cons-badge');
+      badgesAtuais.forEach(b => {
+        if (b.textContent.includes('CE') && b.textContent.includes('GBIF')) b.remove();
+      });
+      if (g.ocorreCE) {
+        const b = document.createElement('span');
+        b.className = 'cons-badge';
+        b.style.cssText = 'background:#fef3c7;color:#92400e;border-color:#fde68a';
+        b.textContent = `📍 CE: ${g.totalCE} reg. (GBIF)`;
+        badgeArea.appendChild(b);
+      } else if (g.totalBR > 0) {
+        const b = document.createElement('span');
+        b.className = 'cons-badge';
+        b.style.cssText = 'background:#f9fafb;color:#6b7280;border-color:#e5e7eb';
+        b.textContent = `📊 ${g.totalBR} reg. no BR`;
+        badgeArea.appendChild(b);
       }
-      msgs.push(`GBIF: ${g.totalBR} reg.`);
     }
 
-    // ── iNaturalist (obs. cidadã + status) ─────────────────────
+    // ── iNaturalist ─────────────────────────────────────────────
     if (inatRes.status === 'fulfilled' && inatRes.value) {
       const n = inatRes.value;
       if (n.obsCE > 0) {
-        badgesNovos.push(`<span class="cons-badge" style="background:#ecfdf5;color:#065f46;border-color:#6ee7b7">🔭 iNat: ${n.obsCE} obs. no CE</span>`);
+        const b = document.createElement('span');
+        b.className = 'cons-badge';
+        b.style.cssText = 'background:#ecfdf5;color:#065f46;border-color:#6ee7b7';
+        b.textContent = `🔭 ${n.obsCE} obs. no CE`;
+        badgeArea.appendChild(b);
       }
-      if (n.ameacado) {
-        badgesNovos.push(`<span class="cons-badge" style="background:#fef2f2;color:#991b1b;border-color:#fca5a5">⚠️ iNat: ameaçada</span>`);
-      }
-      msgs.push(`iNat: ${n.obsCE} obs. CE`);
     }
 
-    // Adicionar badges
-    const badgeArea = document.getElementById('conservation-badges');
-    if (badgeArea && badgesNovos.length > 0) {
-      badgeArea.innerHTML += ' ' + badgesNovos.join(' ');
-    }
-
-    if (statusEl) statusEl.textContent = msgs.length > 0
-      ? '✓ ' + msgs.join(' · ')
-      : '— sem dados adicionais encontrados';
+    if (statusEl) statusEl.textContent = '';
 
   } catch(e) {
-    console.error('buscarDadosWeb:', e);
-    if (statusEl) statusEl.textContent = '⚠️ ' + (navigator.onLine ? e.message : 'Sem conexão');
-  } finally {
-    if (btnEl) btnEl.disabled = false;
+    if (statusEl) statusEl.textContent = '';
+    console.warn('buscarDadosWeb:', e.message);
   }
 }
+
 
 async function buscarGBIF(especie) {
   const key = 'gbif:' + especie.toLowerCase();
