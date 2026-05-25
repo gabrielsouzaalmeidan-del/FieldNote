@@ -6037,14 +6037,6 @@ function autoFillFromSpecies(s) {
 
   renderStatusChips(s);
   toast('✓ ' + s.cl + ' · ' + s.fa);
-  // Buscar dados online automaticamente (GBIF + iNat) em background
-  if (navigator.onLine) {
-    const statusEl = document.getElementById('api-fetch-status');
-    if (statusEl) statusEl.textContent = '🔍 buscando distribuição...';
-    buscarDadosWeb().catch(() => {
-      if (statusEl) statusEl.textContent = '';
-    });
-  }
 }
 
 function getChipClass(v) {
@@ -6382,11 +6374,6 @@ function aplicarStatusConservacao(s) {
   // CITES
   if (s.ci) {
     badges.push(`<span class="cons-badge" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe">📋 CITES ${s.ci}</span>`);
-  }
-
-  // Ocorrência CE
-  if (s.ce === 'CE') {
-    badges.push(`<span class="cons-badge" style="background:#fef3c7;color:#92400e;border-color:#fde68a">📍 Registrada no CE</span>`);
   }
 
   // Endemismo
@@ -11567,64 +11554,7 @@ function filtrarMapa(filtro, chip) {
 const _apiCache = {};
 
 async function buscarDadosWeb() {
-  const especie = (document.getElementById('m-especie')?.value || '').trim();
-  if (!especie) return;
-  const statusEl = document.getElementById('api-fetch-status');
-
-  try {
-    // Buscar GBIF e iNat em paralelo (sem CTFB — CORS sem proxy)
-    const [gbifRes, inatRes] = await Promise.allSettled([
-      buscarGBIF(especie),
-      buscarInat(especie)
-    ]);
-
-    const badgeArea = document.getElementById('conservation-badges');
-    if (!badgeArea) return;
-
-    // ── GBIF ────────────────────────────────────────────────────
-    if (gbifRes.status === 'fulfilled' && gbifRes.value) {
-      const g = gbifRes.value;
-      if (window.acCurrentMatch) {
-        if (g.ocorreCE) window.acCurrentMatch._ce = 'CE';
-      }
-      // Remover badge CE anterior (local) se GBIF confirmar com número
-      const badgesAtuais = badgeArea.querySelectorAll('.cons-badge');
-      badgesAtuais.forEach(b => {
-        if (b.textContent.includes('CE') && b.textContent.includes('GBIF')) b.remove();
-      });
-      if (g.ocorreCE) {
-        const b = document.createElement('span');
-        b.className = 'cons-badge';
-        b.style.cssText = 'background:#fef3c7;color:#92400e;border-color:#fde68a';
-        b.textContent = `📍 CE: ${g.totalCE} reg. (GBIF)`;
-        badgeArea.appendChild(b);
-      } else if (g.totalBR > 0) {
-        const b = document.createElement('span');
-        b.className = 'cons-badge';
-        b.style.cssText = 'background:#f9fafb;color:#6b7280;border-color:#e5e7eb';
-        b.textContent = `📊 ${g.totalBR} reg. no BR`;
-        badgeArea.appendChild(b);
-      }
-    }
-
-    // ── iNaturalist ─────────────────────────────────────────────
-    if (inatRes.status === 'fulfilled' && inatRes.value) {
-      const n = inatRes.value;
-      if (n.obsCE > 0) {
-        const b = document.createElement('span');
-        b.className = 'cons-badge';
-        b.style.cssText = 'background:#ecfdf5;color:#065f46;border-color:#6ee7b7';
-        b.textContent = `🔭 ${n.obsCE} obs. no CE`;
-        badgeArea.appendChild(b);
-      }
-    }
-
-    if (statusEl) statusEl.textContent = '';
-
-  } catch(e) {
-    if (statusEl) statusEl.textContent = '';
-    console.warn('buscarDadosWeb:', e.message);
-  }
+  // Reservado para futuras integrações de dados ecológicos por API
 }
 
 
