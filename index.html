@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-BR">
 <head>
@@ -1157,6 +1157,11 @@ body.dark-mode .ponto-item { background: #1a2e1a; border-color: #2d5a2d; }
 }
 .camp-card:active { transform:scale(0.98); }
 .camp-card.ativa  { border-left-color:#2196F3; background:var(--verde-suave); }
+.camp-card-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.camp-card-body   { display:none; padding-top:8px; border-top:1px solid var(--borda); margin-top:8px; }
+.camp-card.expanded .camp-card-body { display:block; }
+.camp-card-arrow  { font-size:13px; color:var(--texto-muted); transition:transform 0.2s; flex-shrink:0; margin-left:8px; }
+.camp-card.expanded .camp-card-arrow { transform:rotate(180deg); }
 .camp-nome  { font-size:14px; font-weight:800; color:var(--texto); margin-bottom:2px; }
 .camp-meta  { font-size:11px; color:var(--texto-muted); line-height:1.6; }
 .camp-badge {
@@ -2761,7 +2766,7 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
         <span id="ctx-gps-dot" style="width:5px;height:5px;border-radius:50%;background:var(--verde-medio);flex-shrink:0"></span>
         <span id="ctx-gps-text">—</span>
       </div>
-      <button class="ctx-bar-edit" onclick="irPara('campanhas', document.querySelectorAll('.nav-btn')[3])">✏️</button>
+      <button class="ctx-bar-edit" onclick="irPara('projeto', document.querySelectorAll('.nav-btn')[0])">✏️</button>
     </div>
   </div>
 
@@ -2772,56 +2777,208 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 </div>
 
 <!-- PANELS -->
-<div class="panel active" id="panel-escanear">
-  <!-- Contexto da sessão -->
-  <div class="ctx-card">
-    <div class="ctx-title">📍 Contexto da sessão</div>
-    <div class="ctx-grid">
-      <div class="field-group"><label>Projeto</label><input id="ctx-projeto" placeholder="Ex: Taboca" /></div>
-      <div class="field-group"><label>Campanha</label><input id="ctx-campanha" placeholder="Ex: C1" /></div>
-      <div class="field-group">
-        <label>Área</label>
-        <select id="ctx-area">
-          <option value="Área de influência">Área de influência</option>
-          <option value="Área controle">Área controle</option>
-          <option value="Áreas de entorno">Áreas de entorno</option>
-        </select>
+<div class="panel active" id="panel-projeto">
+ <div class="card">
+  <div class="card-title">📁 Projetos</div>
+
+  <!-- Campanha ativa -->
+  <div id="camp-ativa-bar" style="display:none;background:var(--verde-suave);border:1px solid var(--verde-borda);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:10px;font-weight:700;color:var(--verde-medio);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">✅ Campanha ativa</div>
+    <div id="camp-ativa-nome" style="font-size:14px;font-weight:800;color:var(--texto)"></div>
+    <div id="camp-ativa-info" style="font-size:11px;color:var(--texto-muted);margin-top:2px"></div>
+  </div>
+
+  <!-- Tabs: Campanhas / Pontos / Esforço -->
+  <div class="camp-tabs">
+    <button class="camp-tab active" onclick="campTab('campanhas',this)">🗂️ Campanhas</button>
+    <button class="camp-tab" onclick="campTab('pontos',this)">📍 Pontos</button>
+    <button class="camp-tab" onclick="campTab('esforco',this)">⏱️ Esforço</button>
+  </div>
+
+  <!-- TAB: CAMPANHAS ──────────────────────────────────── -->
+  <div class="camp-tab-section active" id="camp-tab-campanhas">
+    <button class="btn btn-primary" style="width:100%;margin-bottom:10px"
+      onclick="toggleNovaCamp()">+ Nova campanha</button>
+
+    <!-- Formulário nova/editar campanha -->
+    <div class="new-camp-form" id="new-camp-form">
+      <div class="section-header" style="margin-bottom:8px" id="new-camp-title">🏕️ Nova campanha</div>
+      <div class="field-group"><label>Nome da campanha *</label>
+        <input id="nc-nome" placeholder="Ex: Campanha 01 — Caatinga"/></div>
+      <div class="field-group"><label>Projeto / Empreendimento</label>
+        <input id="nc-projeto" placeholder="Ex: EIA Parque Eólico Taboca"/></div>
+      <div class="field-row">
+        <div class="field-group"><label>Data início</label>
+          <input id="nc-inicio" type="date"/></div>
+        <div class="field-group"><label>Data fim</label>
+          <input id="nc-fim" type="date"/></div>
       </div>
-      <div class="field-group"><label>Ponto</label><input id="ctx-ponto" placeholder="P1, Trilha..." /></div>
-      <div class="field-group">
-        <label>Método</label>
-        <select id="ctx-metodo" onchange="salvarMetodoPadrao(this.value)">
-          <option value="">— selecione —</option>
-          <option>Ponto de escuta</option>
-          <option>Censo por transecto</option>
-          <option>Busca ativa</option>
-          <option>Encontro ocasional</option>
-          <option>Camera trap</option>
-          <option>Rede de neblina</option>
-          <option>Armadilha</option>
-          <option>Pitfall</option>
-          <option>Procura limitada por tempo</option>
-        </select>
+      <div class="field-row">
+        <div class="field-group"><label>Área de influência</label>
+          <select id="nc-area">
+            <option value="ADA">ADA — Área Diretamente Afetada</option>
+            <option value="AID">AID — Área de Influência Direta</option>
+            <option value="AII">AII — Área de Influência Indireta</option>
+            <option value="Controle">Área Controle</option>
+            <option value="Outra">Outra</option>
+          </select></div>
+        <div class="field-group"><label>Estação</label>
+          <select id="nc-estacao">
+            <option>Chuvosa</option><option>Seca</option><option>Transição</option>
+          </select></div>
       </div>
-      <div class="field-group"><label>Consultor</label><input id="ctx-consultor" placeholder="Nome" /></div>
+      <div class="field-group"><label>Consultor responsável</label>
+        <input id="nc-consultor" placeholder="Nome do biólogo responsável"/></div>
+      <div class="field-group"><label>Observações</label>
+        <textarea id="nc-obs" placeholder="Objetivos, área de estudo, metodologias previstas..." rows="2"></textarea></div>
+      <div class="alert" id="nc-alert"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="salvarCampanha()">💾 Salvar</button>
+        <button class="btn btn-secondary" onclick="toggleNovaCamp()">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Lista de campanhas -->
+    <div class="camp-list" id="camp-list">
+      <div class="empty"><div class="empty-icon">🗂️</div>
+        <p>Nenhuma campanha criada.<br>Crie a primeira campanha para começar.</p></div>
     </div>
   </div>
 
-  <!-- Foto -->
-  <div class="card">
-    <div class="card-title">📷 Escanear anotação</div>
-    <div class="camera-zone" onclick="document.getElementById('file-cam').click()">
-      <div class="cam-icon">📋</div>
-      <p>Fotografar anotações</p>
-      <small>Toque para abrir a câmera</small>
-      <input type="file" id="file-cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)" />
+  <!-- TAB: PONTOS AMOSTRAIS ───────────────────────────── -->
+  <div class="camp-tab-section" id="camp-tab-pontos">
+    <div id="pontos-sem-camp" style="text-align:center;color:var(--texto-muted);padding:16px;font-size:12px">
+      ⚠️ Selecione uma campanha ativa primeiro
     </div>
-    <img id="img-preview" />
-    <div class="alert" id="scan-alert"></div>
-    <div class="progress-bar" id="scan-progress"><div class="progress-fill" id="scan-fill"></div></div>
-    <button class="btn btn-primary" id="btn-scan" onclick="scanImagem()" disabled>Interpretar com IA (requer internet)</button>
-    <button class="btn btn-secondary" onclick="limparScan()" style="margin-top:0">Limpar foto</button>
+    <div id="pontos-conteudo" style="display:none">
+      <!-- Botões de ação -->
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-primary" style="flex:2"
+          onclick="toggleNovoPonto()">+ Adicionar ponto</button>
+        <button class="btn btn-secondary" style="flex:3"
+          onclick="toggleImportPontos()">📂 Importar KML/KMZ/GPX</button>
+      </div>
+
+      <!-- Zona de importação -->
+      <div id="import-pontos-section" style="display:none;margin-bottom:10px">
+        <div class="import-drop-zone" id="import-drop-zone"
+          onclick="document.getElementById('import-file-input').click()"
+          ondragover="importDragOver(event)"
+          ondragleave="importDragLeave(event)"
+          ondrop="importDrop(event)">
+          <div class="import-drop-icon">📂</div>
+          <div class="import-drop-txt">Toque para escolher arquivo</div>
+          <div class="import-drop-sub">ou arraste aqui · KML · KMZ · GPX</div>
+          <input type="file" id="import-file-input" style="display:none"
+            accept=".kml,.kmz,.gpx,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz"
+            onchange="importarArquivo(this.files[0])"/>
+        </div>
+
+        <!-- Preview dos pontos encontrados -->
+        <div class="import-preview" id="import-preview">
+          <div class="import-preview-title">
+            <span id="import-preview-count">0 pontos encontrados</span>
+            <button onclick="fecharImportPreview()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--texto-muted)">✕</button>
+          </div>
+          <div class="import-sel-bar">
+            <span id="import-sel-count">0 selecionados</span>
+            <button onclick="importSelectAll()">Selecionar todos</button>
+            <button onclick="importSelectNone()">Limpar</button>
+          </div>
+          <div id="import-items-list"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:10px"
+            onclick="confirmarImportacao()">
+            ✅ Importar pontos selecionados
+          </button>
+        </div>
+      </div>
+
+      <!-- Formulário novo ponto -->
+      <div class="new-camp-form" id="new-ponto-form">
+        <div class="section-header" style="margin-bottom:8px">📍 Novo ponto amostral</div>
+        <div class="field-group"><label>Nome / Código *</label>
+          <input id="np-nome" placeholder="Ex: P01, Trilha A, Riacho R1"/></div>
+        <div class="field-group"><label>Tipo de ambiente</label>
+          <select id="np-tipo">
+            <option>Mata ciliar</option><option>Caatinga arbórea</option>
+            <option>Caatinga arbustiva</option><option>Cerrado</option>
+            <option>Campo aberto</option><option>Área úmida</option>
+            <option>Riacho/Rio</option><option>Açude/Lago</option>
+            <option>Área antropizada</option><option>Outro</option>
+          </select></div>
+        <div class="field-group"><label>Fitofisionomia</label>
+          <input id="np-fito" placeholder="Ex: Mata seca semidecidual..."/></div>
+        <!-- GPS para o ponto -->
+        <div class="gps-group field-group">
+          <label>Coordenadas UTM</label>
+          <div class="gps-bar">
+            <div class="gps-input-wrap">
+              <input id="np-coord" placeholder="UTM auto ou manual" autocomplete="off"/>
+            </div>
+            <button class="btn-gps" data-gps="np-coord"
+              onclick="captureGps('np-coord','np-coord-meta','np-coord-detail')"
+              title="GPS">📡</button>
+          </div>
+          <div class="gps-meta" id="np-coord-meta"></div>
+          <div class="gps-progress" id="np-coord-progress">
+            <div class="gps-progress-fill" id="np-coord-fill"></div></div>
+          <div class="gps-detail" id="np-coord-detail"></div>
+        </div>
+        <div class="field-group"><label>Observações</label>
+          <textarea id="np-obs" placeholder="Cobertura do dossel, proximidade a cursos d'água, grau de perturbação..." rows="2"></textarea></div>
+        <div class="alert" id="np-alert"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarPonto()">💾 Salvar ponto</button>
+          <button class="btn btn-secondary" onclick="toggleNovoPonto()">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Lista de pontos -->
+      <div class="ponto-list" id="ponto-list"></div>
+    </div>
   </div>
+
+  <!-- TAB: ESFORÇO AMOSTRAL ───────────────────────────── -->
+  <div class="camp-tab-section" id="camp-tab-esforco">
+    <div id="esforco-sem-camp" style="text-align:center;color:var(--texto-muted);padding:16px;font-size:12px">
+      ⚠️ Selecione uma campanha ativa primeiro
+    </div>
+    <div id="esforco-conteudo" style="display:none">
+      <div class="section-header">Esforço calculado automaticamente</div>
+      <div class="esforco-grid" id="esforco-grid">
+        <!-- preenchido por JS -->
+      </div>
+      <div class="section-header" style="margin-top:12px">Esforço manual adicional</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Horas de rede (aves)</label>
+          <input id="ef-rede-aves" type="number" step="0.5" placeholder="0"/>
+          <div class="unit-label">h·rede</div>
+        </div>
+        <div class="field-group">
+          <label>Armadilha-noite (mamíf.)</label>
+          <input id="ef-armadilha" type="number" step="0.5" placeholder="0"/>
+          <div class="unit-label">arm·noite</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Parcelas herpeto (m²)</label>
+          <input id="ef-parcela" type="number" step="1" placeholder="0"/>
+          <div class="unit-label">m²</div>
+        </div>
+        <div class="field-group">
+          <label>Horas de rede (quiro)</label>
+          <input id="ef-rede-quiro" type="number" step="0.5" placeholder="0"/>
+          <div class="unit-label">h·rede</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:4px"
+        onclick="salvarEsforco()">💾 Salvar esforço</button>
+    </div>
+  </div>
+
+ </div>
 </div>
 
 <!-- MANUAL -->
@@ -2835,22 +2992,10 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
           <span id="ctx-b-manual-ponto">Nenhum ponto selecionado</span>
         </div>
         <button class="ctx-banner-trocar"
-          onclick="irPara('campanhas', document.querySelector('[onclick*=campanhas]'))">
+          onclick="irPara('projeto', document.querySelectorAll('.nav-btn')[0])">
           Trocar
         </button>
       </div>
-    </div>
-
-    <div class="section-header">🗂️ Projeto</div>
-    <div class="field-row">
-      <div class="field-group"><label>Projeto</label><input id="m-projeto" /></div>
-      <div class="field-group"><label>Campanha</label><input id="m-campanha" /></div>
-    </div>
-    <div class="field-group">
-      <label>Área de influência</label>
-      <select id="m-area">
-        <option>Área de influência</option><option>Área controle</option><option>Áreas de entorno</option>
-      </select>
     </div>
 
     <div class="section-header">📍 Local e tempo</div>
@@ -2936,7 +3081,7 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
         <span id="mck-ctx-ponto">Nenhum ponto selecionado</span>
       </div>
       <button class="ctx-banner-trocar"
-        onclick="irPara('campanhas', document.querySelector('[onclick*=campanhas]'))">
+        onclick="irPara('projeto', document.querySelectorAll('.nav-btn')[0])">
         Trocar
       </button>
     </div>
@@ -3175,7 +3320,6 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
         </select>
       </div>
     </div>
-    <div class="field-group"><label>Consultor</label><input id="m-consultor" /></div>
     <div class="field-group"><label>Observações</label><textarea id="m-obs" placeholder="Condições climáticas, comportamento..."></textarea></div>
 
     <div class="field-group">
@@ -3281,7 +3425,7 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
       <strong id="ctx-b-bio-camp">—</strong><br>
       <span id="ctx-b-bio-ponto">Nenhum ponto selecionado</span>
     </div>
-    <button class="ctx-banner-trocar" onclick="irPara('campanhas', document.querySelector('[onclick*=campanhas]'))">Trocar</button>
+    <button class="ctx-banner-trocar" onclick="irPara('projeto', document.querySelectorAll('.nav-btn')[0])">Trocar</button>
   </div>
 </div>
 <div class="bio-tabs" id="bio-tabs">
@@ -3989,212 +4133,6 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 </div><!-- /panel-biometria -->
 
 
-
-<!-- CAMPANHAS -->
-<div class="panel" id="panel-campanhas">
- <div class="card">
-  <div class="card-title">🗂️ Campanhas</div>
-
-  <!-- Campanha ativa -->
-  <div id="camp-ativa-bar" style="display:none;background:var(--verde-suave);border:1px solid var(--verde-borda);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px">
-    <div style="font-size:10px;font-weight:700;color:var(--verde-medio);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">✅ Campanha ativa</div>
-    <div id="camp-ativa-nome" style="font-size:14px;font-weight:800;color:var(--texto)"></div>
-    <div id="camp-ativa-info" style="font-size:11px;color:var(--texto-muted);margin-top:2px"></div>
-  </div>
-
-  <!-- Tabs: Campanhas / Pontos / Esforço -->
-  <div class="camp-tabs">
-    <button class="camp-tab active" onclick="campTab('campanhas',this)">🗂️ Campanhas</button>
-    <button class="camp-tab" onclick="campTab('pontos',this)">📍 Pontos</button>
-    <button class="camp-tab" onclick="campTab('esforco',this)">⏱️ Esforço</button>
-  </div>
-
-  <!-- TAB: CAMPANHAS ──────────────────────────────────── -->
-  <div class="camp-tab-section active" id="camp-tab-campanhas">
-    <button class="btn btn-primary" style="width:100%;margin-bottom:10px"
-      onclick="toggleNovaCamp()">+ Nova campanha</button>
-
-    <!-- Formulário nova/editar campanha -->
-    <div class="new-camp-form" id="new-camp-form">
-      <div class="section-header" style="margin-bottom:8px" id="new-camp-title">🏕️ Nova campanha</div>
-      <div class="field-group"><label>Nome da campanha *</label>
-        <input id="nc-nome" placeholder="Ex: Campanha 01 — Caatinga"/></div>
-      <div class="field-group"><label>Projeto / Empreendimento</label>
-        <input id="nc-projeto" placeholder="Ex: EIA Parque Eólico Taboca"/></div>
-      <div class="field-row">
-        <div class="field-group"><label>Data início</label>
-          <input id="nc-inicio" type="date"/></div>
-        <div class="field-group"><label>Data fim</label>
-          <input id="nc-fim" type="date"/></div>
-      </div>
-      <div class="field-row">
-        <div class="field-group"><label>Área de influência</label>
-          <select id="nc-area">
-            <option value="ADA">ADA — Área Diretamente Afetada</option>
-            <option value="AID">AID — Área de Influência Direta</option>
-            <option value="AII">AII — Área de Influência Indireta</option>
-            <option value="Controle">Área Controle</option>
-            <option value="Outra">Outra</option>
-          </select></div>
-        <div class="field-group"><label>Estação</label>
-          <select id="nc-estacao">
-            <option>Chuvosa</option><option>Seca</option><option>Transição</option>
-          </select></div>
-      </div>
-      <div class="field-group"><label>Consultor responsável</label>
-        <input id="nc-consultor" placeholder="Nome do biólogo responsável"/></div>
-      <div class="field-group"><label>Observações</label>
-        <textarea id="nc-obs" placeholder="Objetivos, área de estudo, metodologias previstas..." rows="2"></textarea></div>
-      <div class="alert" id="nc-alert"></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" style="flex:1" onclick="salvarCampanha()">💾 Salvar</button>
-        <button class="btn btn-secondary" onclick="toggleNovaCamp()">Cancelar</button>
-      </div>
-    </div>
-
-    <!-- Lista de campanhas -->
-    <div class="camp-list" id="camp-list">
-      <div class="empty"><div class="empty-icon">🗂️</div>
-        <p>Nenhuma campanha criada.<br>Crie a primeira campanha para começar.</p></div>
-    </div>
-  </div>
-
-  <!-- TAB: PONTOS AMOSTRAIS ───────────────────────────── -->
-  <div class="camp-tab-section" id="camp-tab-pontos">
-    <div id="pontos-sem-camp" style="text-align:center;color:var(--texto-muted);padding:16px;font-size:12px">
-      ⚠️ Selecione uma campanha ativa primeiro
-    </div>
-    <div id="pontos-conteudo" style="display:none">
-      <!-- Botões de ação -->
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <button class="btn btn-primary" style="flex:2"
-          onclick="toggleNovoPonto()">+ Adicionar ponto</button>
-        <button class="btn btn-secondary" style="flex:3"
-          onclick="toggleImportPontos()">📂 Importar KML/KMZ/GPX</button>
-      </div>
-
-      <!-- Zona de importação -->
-      <div id="import-pontos-section" style="display:none;margin-bottom:10px">
-        <div class="import-drop-zone" id="import-drop-zone"
-          onclick="document.getElementById('import-file-input').click()"
-          ondragover="importDragOver(event)"
-          ondragleave="importDragLeave(event)"
-          ondrop="importDrop(event)">
-          <div class="import-drop-icon">📂</div>
-          <div class="import-drop-txt">Toque para escolher arquivo</div>
-          <div class="import-drop-sub">ou arraste aqui · KML · KMZ · GPX</div>
-          <input type="file" id="import-file-input" style="display:none"
-            accept=".kml,.kmz,.gpx,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz"
-            onchange="importarArquivo(this.files[0])"/>
-        </div>
-
-        <!-- Preview dos pontos encontrados -->
-        <div class="import-preview" id="import-preview">
-          <div class="import-preview-title">
-            <span id="import-preview-count">0 pontos encontrados</span>
-            <button onclick="fecharImportPreview()" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--texto-muted)">✕</button>
-          </div>
-          <div class="import-sel-bar">
-            <span id="import-sel-count">0 selecionados</span>
-            <button onclick="importSelectAll()">Selecionar todos</button>
-            <button onclick="importSelectNone()">Limpar</button>
-          </div>
-          <div id="import-items-list"></div>
-          <button class="btn btn-primary" style="width:100%;margin-top:10px"
-            onclick="confirmarImportacao()">
-            ✅ Importar pontos selecionados
-          </button>
-        </div>
-      </div>
-
-      <!-- Formulário novo ponto -->
-      <div class="new-camp-form" id="new-ponto-form">
-        <div class="section-header" style="margin-bottom:8px">📍 Novo ponto amostral</div>
-        <div class="field-group"><label>Nome / Código *</label>
-          <input id="np-nome" placeholder="Ex: P01, Trilha A, Riacho R1"/></div>
-        <div class="field-group"><label>Tipo de ambiente</label>
-          <select id="np-tipo">
-            <option>Mata ciliar</option><option>Caatinga arbórea</option>
-            <option>Caatinga arbustiva</option><option>Cerrado</option>
-            <option>Campo aberto</option><option>Área úmida</option>
-            <option>Riacho/Rio</option><option>Açude/Lago</option>
-            <option>Área antropizada</option><option>Outro</option>
-          </select></div>
-        <div class="field-group"><label>Fitofisionomia</label>
-          <input id="np-fito" placeholder="Ex: Mata seca semidecidual..."/></div>
-        <!-- GPS para o ponto -->
-        <div class="gps-group field-group">
-          <label>Coordenadas UTM</label>
-          <div class="gps-bar">
-            <div class="gps-input-wrap">
-              <input id="np-coord" placeholder="UTM auto ou manual" autocomplete="off"/>
-            </div>
-            <button class="btn-gps" data-gps="np-coord"
-              onclick="captureGps('np-coord','np-coord-meta','np-coord-detail')"
-              title="GPS">📡</button>
-          </div>
-          <div class="gps-meta" id="np-coord-meta"></div>
-          <div class="gps-progress" id="np-coord-progress">
-            <div class="gps-progress-fill" id="np-coord-fill"></div></div>
-          <div class="gps-detail" id="np-coord-detail"></div>
-        </div>
-        <div class="field-group"><label>Observações</label>
-          <textarea id="np-obs" placeholder="Cobertura do dossel, proximidade a cursos d'água, grau de perturbação..." rows="2"></textarea></div>
-        <div class="alert" id="np-alert"></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" style="flex:1" onclick="salvarPonto()">💾 Salvar ponto</button>
-          <button class="btn btn-secondary" onclick="toggleNovoPonto()">Cancelar</button>
-        </div>
-      </div>
-
-      <!-- Lista de pontos -->
-      <div class="ponto-list" id="ponto-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB: ESFORÇO AMOSTRAL ───────────────────────────── -->
-  <div class="camp-tab-section" id="camp-tab-esforco">
-    <div id="esforco-sem-camp" style="text-align:center;color:var(--texto-muted);padding:16px;font-size:12px">
-      ⚠️ Selecione uma campanha ativa primeiro
-    </div>
-    <div id="esforco-conteudo" style="display:none">
-      <div class="section-header">Esforço calculado automaticamente</div>
-      <div class="esforco-grid" id="esforco-grid">
-        <!-- preenchido por JS -->
-      </div>
-      <div class="section-header" style="margin-top:12px">Esforço manual adicional</div>
-      <div class="field-row">
-        <div class="field-group">
-          <label>Horas de rede (aves)</label>
-          <input id="ef-rede-aves" type="number" step="0.5" placeholder="0"/>
-          <div class="unit-label">h·rede</div>
-        </div>
-        <div class="field-group">
-          <label>Armadilha-noite (mamíf.)</label>
-          <input id="ef-armadilha" type="number" step="0.5" placeholder="0"/>
-          <div class="unit-label">arm·noite</div>
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label>Parcelas herpeto (m²)</label>
-          <input id="ef-parcela" type="number" step="1" placeholder="0"/>
-          <div class="unit-label">m²</div>
-        </div>
-        <div class="field-group">
-          <label>Horas de rede (quiro)</label>
-          <input id="ef-rede-quiro" type="number" step="0.5" placeholder="0"/>
-          <div class="unit-label">h·rede</div>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%;margin-top:4px"
-        onclick="salvarEsforco()">💾 Salvar esforço</button>
-    </div>
-  </div>
-
- </div>
-</div>
-
 <!-- DASHBOARD -->
 <div class="panel" id="panel-dashboard">
 
@@ -4646,9 +4584,9 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 
 <!-- NAV -->
 <nav class="nav-bar">
-  <button class="nav-btn active" onclick="irPara('escanear', this)">
-    <span class="nav-icon">📷</span>
-    <span class="nav-label">Scan</span>
+  <button class="nav-btn active" onclick="irPara('projeto', this)">
+    <span class="nav-icon">📁</span>
+    <span class="nav-label">Projeto</span>
   </button>
   <button class="nav-btn" onclick="irPara('manual', this)">
     <span class="nav-icon">✏️</span>
@@ -6614,18 +6552,6 @@ async function init() {
   ['bav-data','bma-data','bhe-data','bic-data','bqu-data'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = today;
   });
-  // Preencher campos manuais com contexto
-  setTimeout(() => {
-    document.getElementById('m-projeto').value = document.getElementById('ctx-projeto').value;
-    document.getElementById('m-consultor').value = document.getElementById('ctx-consultor').value;
-    // Restaurar método e disparar mudança visual
-    const metodoEl = document.getElementById('m-metodo');
-    const ctxMetodo = document.getElementById('ctx-metodo');
-    if (metodoEl && ctxMetodo && ctxMetodo.value) {
-      metodoEl.value = ctxMetodo.value;
-      onMetodoChange(ctxMetodo.value);
-    }
-  }, 100);
 
   atualizarCtxBar();
   atualizarOfflineBar();
@@ -6673,10 +6599,6 @@ function irPara(panel, btn) {
     panel = 'manual';
     btn = document.querySelectorAll('.nav-btn')[1];
   }
-  // Campanhas não tem botão na nav — marcar Dash
-  if (panel === 'campanhas' && !btn) {
-    btn = document.querySelectorAll('.nav-btn')[3];
-  }
   // Registros agora fica dentro do Dash — redirecionar para sub-aba
   if (panel === 'registros') {
     panel = 'dashboard';
@@ -6721,17 +6643,12 @@ function irPara(panel, btn) {
   }
   if (panel === 'manual') {
     const mel = document.getElementById('m-metodo');
-    // Sincronizar ctx-metodo → m-metodo se o campo estiver vazio
-    if (mel && !mel.value) {
-      const ctxMet = document.getElementById('ctx-metodo');
-      if (ctxMet && ctxMet.value) { mel.value = ctxMet.value; }
-    }
     if (mel) onMetodoChange(mel.value);
   }
   if (panel === 'registros') { renderRegistrosFiltrado(); renderBioRegistros(document.getElementById('bio-lista')); }
   if (panel === 'dashboard') { renderDashboard(); }
   if (panel === 'enviar')    { renderReqConfig(); renderPerfil(); if (!perfilUsuario.nome) { document.getElementById('perfil-form').classList.add('show'); } }
-  if (panel === 'campanhas')  { renderCampanhas(); }
+  if (panel === 'projeto')    { renderCampanhas(); }
   if (panel === 'manual' || panel === 'biometria' || panel === 'mackinnon') { propagarConsultor(); }
   if (panel === 'mackinnon')  { mckIniciar(); }
   if (panel === 'biometria') { atualizarIdDisplay(document.querySelector('.bio-tab.active')?.textContent?.trim()?.replace(/\n.*/,'')?.trim() || 'Avifauna'); }
@@ -6845,12 +6762,12 @@ Responda SOMENTE JSON válido, sem markdown:
 
 function getContexto() {
   return {
-    projeto: document.getElementById('ctx-projeto').value,
-    campanha: document.getElementById('ctx-campanha').value,
-    area: document.getElementById('ctx-area').value,
-    ponto: document.getElementById('ctx-ponto').value,
-    metodo: document.getElementById('ctx-metodo').value,
-    consultor: document.getElementById('ctx-consultor').value
+    projeto:  campAtiva?.projeto   || '',
+    campanha: campAtiva?.nome      || '',
+    area:     campAtiva?.area      || '',
+    ponto:    pontoAtivo?.nome     || '',
+    metodo:   document.getElementById('m-metodo')?.value || '',
+    consultor: campAtiva?.consultor || ''
   };
 }
 
@@ -9357,18 +9274,25 @@ function renderCampanhas() {
     const nReg  = registros.filter(r => r.campanha === c.nome || r.campId === c._id).length;
     const nBio  = bioRegistros.filter(r => r.campanha === c.nome || r.campId === c._id).length;
     const datas = [fmt(c.inicio), fmt(c.fim)].filter(Boolean).join(' → ');
-    return `<div class="camp-card ${isAtiva ? 'ativa' : ''}">
-      <span class="camp-badge ${isAtiva ? 'ativa' : 'inativa'}">${isAtiva ? '● ATIVA' : '○ INATIVA'}</span>
-      <div class="camp-nome">${c.nome}</div>
-      <div class="camp-meta">
-        ${c.projeto ? c.projeto + '<br>' : ''}
-        ${[c.area, c.estacao, datas].filter(Boolean).join(' · ')}
-        ${nReg+nBio > 0 ? '<br>📋 ' + nReg + ' obs. + ' + nBio + ' bio' : ''}
+    return `<div class="camp-card ${isAtiva ? 'ativa expanded' : ''}" id="camp-card-${c._id}">
+      <div class="camp-card-header" onclick="toggleCampCard('${c._id}')">
+        <div>
+          <span class="camp-badge ${isAtiva ? 'ativa' : 'inativa'}">${isAtiva ? '● ATIVA' : '○ INATIVA'}</span>
+          <div class="camp-nome">${c.nome}</div>
+        </div>
+        <span class="camp-card-arrow">▾</span>
       </div>
-      <div class="camp-actions">
-        ${!isAtiva ? `<button class="btn-ativar" onclick="ativarCampanha('${c._id}')">✅ Ativar</button>` : '<button disabled style="opacity:.5">✅ Ativa</button>'}
-        <button onclick="editarCampanha('${c._id}')">✏️ Editar</button>
-        <button onclick="deletarCampanha('${c._id}')" style="color:var(--perigo)">🗑️</button>
+      <div class="camp-card-body">
+        <div class="camp-meta">
+          ${c.projeto ? c.projeto + '<br>' : ''}
+          ${[c.area, c.estacao, datas].filter(Boolean).join(' · ')}
+          ${nReg+nBio > 0 ? '<br>📋 ' + nReg + ' obs. + ' + nBio + ' bio' : ''}
+        </div>
+        <div class="camp-actions">
+          ${!isAtiva ? `<button class="btn-ativar" onclick="ativarCampanha('${c._id}')">✅ Ativar</button>` : `<button onclick="finalizarCampanha('${c._id}')" style="color:var(--perigo);border-color:var(--perigo)">🏁 Finalizar</button>`}
+          <button onclick="editarCampanha('${c._id}')">✏️ Editar</button>
+          <button onclick="deletarCampanha('${c._id}')" style="color:var(--perigo)">🗑️</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -9527,6 +9451,26 @@ function campTab(nome, btn) {
   document.getElementById('camp-tab-' + nome).classList.add('active');
   if (nome === 'pontos')  renderPontos();
   if (nome === 'esforco') renderEsforco();
+}
+
+function toggleCampCard(id) {
+  const card = document.getElementById('camp-card-' + id);
+  if (card) card.classList.toggle('expanded');
+}
+
+async function finalizarCampanha(id) {
+  const c = campanhas.find(x => x._id === id);
+  if (!confirm('Finalizar campanha "' + (c?.nome||'') + '"?\nEla será desativada e ficará salva como concluída.')) return;
+  campAtiva = null;
+  pontoAtivo = null;
+  window._campIdAtivo  = '';
+  window._pontoIdAtivo = '';
+  atualizarCtxBar();
+  localStorage.removeItem('fauna_camp_ativa');
+  localStorage.removeItem('fauna_ponto_ativo');
+  atualizarBannersContexto();
+  renderCampanhas();
+  toast('🏁 Campanha "' + (c?.nome||'') + '" finalizada');
 }
 
 // ── Propagação de contexto ────────────────────────────────
