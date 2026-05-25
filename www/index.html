@@ -424,6 +424,11 @@ textarea { resize: vertical; min-height: 60px; }
   padding: 2px 8px; margin-left: 6px; vertical-align: middle;
 }
 .autofill-badge.show { display: inline; }
+.sp-nome-popular {
+  margin-top: 5px; font-size: 12px; font-weight: 600;
+  color: var(--verde-medio); letter-spacing: 0.01em;
+}
+body.dark-mode .sp-nome-popular { color: #4ade80; }
 .autofilled {
   background: var(--verde-suave) !important;
   border-color: var(--verde-claro) !important;
@@ -431,6 +436,7 @@ textarea { resize: vertical; min-height: 60px; }
   transition: all 0.3s;
 }
 .status-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+#status-row { margin-bottom: 10px; }
 .status-chip {
   font-size: 10px; font-weight: 700; padding: 3px 8px;
   border-radius: 99px; letter-spacing: 0.03em;
@@ -3252,18 +3258,6 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
         <span id="bio-section-icon">🦜</span>
         <span id="bio-section-label"> Dados biológicos</span>
       </div>
-    <div class="field-row">
-      <div class="field-group">
-        <label>Classe</label>
-        <select id="m-classe" onchange="atualizarIconeBio(this.value)"><option>Aves</option><option>Mammalia</option><option>Reptilia</option><option>Amphibia</option><option>Pisces</option></select>
-      </div>
-      <div class="field-group"><label>Ordem</label><input id="m-ordem" placeholder="Passeriformes..." /></div>
-    </div>
-    <div class="field-group"><label>Família</label><input id="m-familia" placeholder="Tyrannidae..." /></div>
-    <div id="status-row" style="display:none;" class="field-group">
-      <label>Status de conservação</label>
-      <div class="status-chips" id="status-chips"></div>
-    </div>
     <div class="field-group">
         <label>Espécie * <span id="autofill-badge" class="autofill-badge">✓ auto-preenchido</span></label>
         <div class="ac-wrapper">
@@ -3285,6 +3279,19 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
           <button type="button" class="mic-btn" id="mic-btn" onclick="toggleVoz()" title="Ditar espécie por voz">🎙️</button>
           </div>
       </div>
+      <div id="sp-nome-popular" class="sp-nome-popular" style="display:none"></div>
+    </div>
+    <div id="status-row" style="display:none;">
+      <div class="status-chips" id="status-chips"></div>
+    </div>
+    <div class="field-group"><label>Família</label><input id="m-familia" placeholder="Tyrannidae..." /></div>
+    <div class="field-row">
+      <div class="field-group"><label>Ordem</label><input id="m-ordem" placeholder="Passeriformes..." /></div>
+      <div class="field-group">
+        <label>Classe</label>
+        <select id="m-classe" onchange="atualizarIconeBio(this.value)"><option>Aves</option><option>Mammalia</option><option>Reptilia</option><option>Amphibia</option><option>Pisces</option></select>
+      </div>
+    </div>
     <div class="field-row">
       <div class="field-group"><label>Nº indivíduos</label><input id="m-n" type="number" min="0" value="1" /></div>
       <div class="field-group">
@@ -6054,19 +6061,35 @@ function getChipClass(v) {
   return 'chip-na';
 }
 
+const _HA = {D:'Florestal',I:'Borda/Interface',S:'Savana/Aberto',A:'Aquático',R:'Rupestre'};
+const _SE = {A:'Alta',M:'Média',B:'Baixa'};
+const _CA = {A:'Alta',M:'Média',B:'Baixa'};
+const _GU = {oni:'Onívoro',fru:'Frugívoro',ins:'Insetívoro',gra:'Granívoro',car:'Carnívoro',
+             nec:'Nectarívoro',pis:'Piscívoro',her:'Herbívoro',det:'Detritívoro',nec2:'Nectarívoro'};
+
 function renderStatusChips(s) {
   const row = document.getElementById('status-row');
   const chips = document.getElementById('status-chips');
+  const npEl = document.getElementById('sp-nome-popular');
   const parts = [];
 
-  if (s.np) parts.push('<span class="status-chip chip-ne">📋 ' + s.np + '</span>');
+  // Nome popular — exibido inline abaixo do campo de espécie
+  if (npEl) {
+    if (s.np) {
+      npEl.textContent = s.np;
+      npEl.style.display = 'block';
+    } else {
+      npEl.style.display = 'none';
+    }
+  }
+
   if (s.mm && s.mm !== '' && s.mm !== '-') parts.push('<span class="status-chip ' + getChipClass(s.mm) + '">MMA 148/22: ' + s.mm + '</span>');
   if (s.iu && s.iu !== '' && s.iu !== '-') parts.push('<span class="status-chip ' + getChipClass(s.iu) + '">IUCN: ' + s.iu + '</span>');
   if (s.ci && s.ci !== '' && s.ci !== '-') parts.push('<span class="status-chip chip-cites">CITES: ' + s.ci + '</span>');
-  if (s.gu) parts.push('<span class="status-chip chip-na">🍽 ' + s.gu + '</span>');
-  if (s.ha) parts.push('<span class="status-chip chip-na">🏠 ' + s.ha + '</span>');
-  if (s.se) parts.push('<span class="status-chip chip-na">⚡ Sens.: ' + s.se + '</span>');
-  if (s.ca) parts.push('<span class="status-chip chip-na">🔄 Cap.Adap.: ' + s.ca + '</span>');
+  if (s.gu) parts.push('<span class="status-chip chip-na">🍽 ' + (_GU[s.gu] || s.gu) + '</span>');
+  if (s.ha) parts.push('<span class="status-chip chip-na">🏕 ' + (_HA[s.ha] || s.ha) + '</span>');
+  if (s.se) parts.push('<span class="status-chip chip-na">⚡ Sens. ' + (_SE[s.se] || s.se) + '</span>');
+  if (s.ca) parts.push('<span class="status-chip chip-na">🔄 Adap. ' + (_CA[s.ca] || s.ca) + '</span>');
 
   chips.innerHTML = parts.join('');
   row.style.display = parts.length > 0 ? 'block' : 'none';
@@ -6833,6 +6856,8 @@ function adicionarManual() {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   document.getElementById('status-row').style.display = 'none';
+  const npEl = document.getElementById('sp-nome-popular');
+  if (npEl) { npEl.textContent = ''; npEl.style.display = 'none'; }
   document.getElementById('ac-ghost').textContent = '';
   document.getElementById('ac-typed').textContent = '';
   acCurrentMatch = null;
