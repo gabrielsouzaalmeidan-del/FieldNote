@@ -1,6 +1,6 @@
-# CLAUDE.md — WildLog
+# CLAUDE.md — WildLog v2.1
 
-Guia completo do projeto para o Claude Code. Leia este arquivo antes de qualquer edição.
+Guia completo do projeto para o Claude Code. **Leia este arquivo antes de qualquer edição.**
 
 ---
 
@@ -8,11 +8,13 @@ Guia completo do projeto para o Claude Code. Leia este arquivo antes de qualquer
 
 App Android de coleta de dados de fauna silvestre em campo, desenvolvido para biólogos e consultores ambientais brasileiros. Funciona **100% offline** (IndexedDB + SheetJS embutido), sem backend, sem login.
 
-- **Plataforma:** Android (Capacitor 6 + HTML/CSS/JS single-file)
+- **Plataforma:** Android (Capacitor 6) + PWA (GitHub Pages)
 - **Repositório:** `github.com/gabrielsouzaalmeidan-del/fauna-campo`
-- **Build:** GitHub Actions (`.github/workflows/build-apk.yml`)
-- **Arquivo principal:** `index.html` (~9.500 linhas)
-- **Versão atual:** v2.1
+- **Token GitHub:** configure com `git remote set-url origin https://SEU_TOKEN@github.com/gabrielsouzaalmeidan-del/fauna-campo`
+- **Build:** GitHub Actions → `WildLog.apk` automático a cada push no `main`
+- **PWA:** `https://gabrielsouzaalmeidan-del.github.io/fauna-campo/`
+- **Arquivo principal:** `index.html` (~11.789 linhas, ~1.33MB)
+- **Versão:** v2.1
 
 ---
 
@@ -21,18 +23,27 @@ App Android de coleta de dados de fauna silvestre em campo, desenvolvido para bi
 ```
 fauna-campo/
 ├── index.html              ← ÚNICO ARQUIVO DO APP (tudo inline)
+├── www/index.html          ← Cópia sincronizada (usada pelo Capacitor)
 ├── CLAUDE.md               ← Este arquivo
-├── .github/
-│   └── workflows/
-│       └── build-apk.yml   ← Gera APK via GitHub Actions
-└── (gerado pelo Capacitor)
-    ├── android/
-    └── package.json
+├── android-src/
+│   └── MainActivity.java   ← DownloadListener para XLSX no Android
+├── capacitor.config.json   ← appId: br.com.wildlog.app
+├── package.json            ← Capacitor 6 + @capacitor/filesystem + share
+└── .github/workflows/
+    └── build-apk.yml       ← 16 steps, gera WildLog.apk
 ```
+
+### ⚠️ Regra crítica: sempre sincronizar www/
+
+Após editar `index.html`, sempre copiar para `www/index.html`:
+```bash
+cp index.html www/index.html
+```
+O Capacitor usa `www/` para gerar o APK. Se não sincronizar, o APK fica desatualizado.
 
 ### Por que um único arquivo?
 
-O Capacitor copia `www/index.html` para o APK. O SheetJS (XLSX) está **embutido inline** no HTML para garantir funcionamento offline. Não há bundler, webpack ou build step — o HTML é o app.
+O SheetJS (XLSX) está **embutido inline** no HTML (~640KB). Não há bundler — o HTML é o app.
 
 ---
 
@@ -40,297 +51,353 @@ O Capacitor copia `www/index.html` para o APK. O SheetJS (XLSX) está **embutido
 
 ```
 <head>
-  <style> ← CSS completo (~2.300 linhas) — Field Pro + Nature Dark
-  <script> ← SheetJS embutido (~640KB)
+  <style>   ← CSS completo (~149KB) — Field Pro + Nature Dark
+  <script>  ← Capacitor loader (164 chars)
+  <script>  ← SheetJS embutido (~639KB)
+  <script>  ← SW_CODE + registrarPWA (41KB)
 
 <body>
-  <div class="header">        ← Header fixo (logo, dark mode) — FUNDO BRANCO (Field Pro)
-  <div id="ctx-bar">          ← Barra de contexto ativo + pill GPS ao vivo
-  <div id="offline-bar">      ← Indicador offline
-  <div id="sync-indicator">   ← Toast de sync
-
-  <!-- 7 PANELS (abas) -->
-  <div class="panel" id="panel-escanear">
-  <div class="panel" id="panel-manual">
-  <div class="panel" id="panel-biometria">
-  <div class="panel" id="panel-campanhas">
-  <div class="panel" id="panel-dashboard">
-  <div class="panel" id="panel-registros">
-  <div class="panel" id="panel-enviar">
-
-  <nav class="nav-bar">       ← Nav FORA dos panels (root level) — FUNDO BRANCO (Field Pro)
-  <div id="sync-indicator">
-  <div id="toast">
-
-  <script> ← JS completo (~5.200 linhas)
+  <div class="header">         ← 🌿 WildLog + online pill + dark toggle
+  <div id="ctx-bar">           ← Chips: 🗂️Campanha · 📍Ponto · 🔬Método
+  <div id="offline-bar">       ← Barra offline amarela
+  
+  <!-- 8 PANELS -->
+  panel-escanear     ← OCR câmera
+  panel-manual       ← Formulário registro + autocomplete espécies
+  panel-biometria    ← Morfometria (5 grupos)
+  panel-campanhas    ← Projetos, campanhas e pontos
+  panel-dashboard    ← Sub-abas: 📊 Resumo | 📋 Registros N
+  panel-mapa         ← Leaflet + OpenStreetMap
+  panel-enviar       ← Export XLSX + perfil
+  
+  <nav class="nav-bar">        ← 6 abas: Scan/Manual/Bio/Dash/Mapa/Enviar
+  
+  <script>  ← JS principal (~457KB) — SPECIES_DB + todas as funções
 ```
 
-### Regra crítica de estrutura HTML
+### ⚠️ Regra crítica de estrutura HTML
 
-A `<nav class="nav-bar">` DEVE estar no **root level** (depth=0), fora de qualquer `<div>`. Se ficar dentro de um panel (que tem `display:none`), a nav some da tela.
+O arquivo **DEVE** terminar com:
+```html
+</script>
+</body>
+</html>
+```
+Se faltar, o browser descarta todo o JS e as abas param de funcionar (`irPara is not defined`).
+
+### ⚠️ Regra crítica da <nav>
+
+A `<nav class="nav-bar">` DEVE estar no **root level** (depth=0), fora de qualquer `<div>`. Se ficar dentro de um panel, some da tela.
 
 ---
 
-## Design — Dois temas visuais
+## Design Visual
 
 ### Modo Normal → Field Pro
-- Header e nav-bar com **fundo branco**, borda cinza sutil
-- Variáveis: `--verde-medio: #16a34a`, `--areia: #f9fafb`, `--borda: #e5e7eb`, `--texto: #111827`
-- Inputs brancos com borda cinza, foco verde + glow `rgba(22,163,74,0.12)`
-- Cards brancos, sombra mínima
-- record-item: accent line `3px` verde à esquerda
-- section-header: linha divisória `::after`
+- Header/nav branco, `border-bottom: 1px solid var(--borda)`
+- `--verde-medio: #16a34a` · `--areia: #f9fafb` · `--borda: #e5e7eb` · `--texto: #111827`
+- Inputs brancos, foco verde + glow `rgba(22,163,74,0.12)`
+- Cards brancos, sombra mínima, record-item com accent line `3px` verde
 
-### Dark Mode → Nature Dark (ativa ao ligar "Tela Escura")
-- `body.dark-mode`: `--areia: #0a1a0a`, `--verde-medio: #4ade80`, `--texto: #d1fae5`
-- Header/nav: `#0d2b0d`, logo/ícones ativos `#4ade80`
-- Cards: `#1a2e1a`, border `#2d5a2d`
-- 99+ seletores dark-mode para a paleta Nature Dark
+### Dark Mode → Nature Dark
+- `body.dark-mode`: `--areia: #0a1a0a` · `--verde-medio: #4ade80` · `--texto: #d1fae5`
+- Header/nav: `#0d2b0d` · Cards: `#1a2e1a` · border: `#2d5a2d`
 
 ---
 
-## Módulos do App (7 abas)
+## Nav Bar (6 abas)
 
-| Aba | Panel ID | Função principal |
-|-----|----------|-----------------|
-| 📷 Scan | `panel-escanear` | OCR de fichas via câmera + IA |
-| 📝 Manual | `panel-manual` | Formulário de registro + MacKinnon inline |
-| 📏 Bio | `panel-biometria` | Morfometria por grupo (5 sub-abas) |
-| 🗂️ Camp. | `panel-campanhas` | Projetos, campanhas e pontos amostrais |
-| 📊 Resumo | `panel-dashboard` | Dashboard gráfico (donut + barras) |
-| 📋 Dados | `panel-registros` | Lista de registros com filtros rápidos |
-| 📤 Enviar | `panel-enviar` | Exportação XLSX + perfil do consultor |
+```
+Scan | Manual | Bio | Dash | Mapa | Enviar
+  0      1      2     3      4      5
+```
+
+- **Camp.** não tem botão — acessado via ctx-bar ou Dash > Acesso Rápido
+- **Dados** não tem botão — é sub-aba interna do Dash
+- `irPara('campanhas')` → marca Dash (idx 3) como active
+- `irPara('registros')` → abre Dash na sub-aba Registros
 
 ---
 
-## Formulário Manual — Estrutura Crítica
+## Dash: Sub-abas (📊 Resumo | 📋 Registros)
+
+O `panel-dashboard` contém duas sub-abas gerenciadas por `mudarDashTab(tab)`:
 
 ```html
-<div class="panel" id="panel-manual">
-  <div class="card">
-    <!-- Seção Projeto -->
-    <!-- Seção Local e Tempo -->
-    <!-- Seção Metodologia -->
-    <div class="field-group">
-      <label>Método</label>
-      <select id="m-metodo" onchange="onMetodoChange(this.value)"
-                            oninput="onMetodoChange(this.value)">
-    </div>
-    <div class="field-group" id="manual-tipo-group">  ← some no MacKinnon
-      <label>Tipo de registro</label>
-      <select id="m-tipo">
-    </div>
-
-    <!-- MacKinnon INLINE (antes do bio-wrap) -->
-    <div id="mck-inline-block" style="display:none">
-      ... módulo MacKinnon completo ...
-    </div>
-
-    <!-- Dados Biológicos (some no MacKinnon) -->
-    <div id="manual-bio-wrap">
-      <div class="card">
-        <div class="card-title">
-          <span id="bio-section-icon">🐦</span>   ← ícone dinâmico por classe (Aves = 🐦)
-          <span id="bio-section-label"> Dados biológicos</span>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="dash-tabs">
+  <button class="dash-tab active" id="dtab-resumo">📊 Resumo</button>
+  <button class="dash-tab" id="dtab-registros">📋 Registros <span id="dtab-badge">0</span></button>
 </div>
+
+<div id="dsub-resumo" class="dsub active">   ← Gráficos + stats + acesso rápido
+<div id="dsub-registros" class="dsub">       ← Lista + filtros + biometria
 ```
 
-### Ícones por Classe (CLASSE_ICONE)
-- Aves: `🐦`  Mammalia: `🐾`  Reptilia: `🦎`  Amphibia: `🐸`  Pisces: `🐟`
+### CSS crítico das sub-abas:
+```css
+#panel-dashboard { height: calc(100vh - 160px); display: flex; flex-direction: column; }
+#panel-dashboard.active { display: flex !important; }
+.dash-tabs { flex-shrink: 0; }
+.dsub.active { display: block; flex: 1; overflow-y: auto; }
+```
 
-### onMetodoChange — lógica central
+### ⚠️ Armadilha histórica do dsub-resumo:
+O `dsub-resumo` precisa ter **todas as divs fechadas** antes do `<!-- /dsub-resumo -->`. Se faltar 1 `</div>`, o `dsub-registros` fica filho do resumo e fica invisível (rect 0,0,0,0).
+
+---
+
+## SPECIES_DB — Estado Atual (1.254 espécies)
 
 ```javascript
-function onMetodoChange(val) {
-  // Persiste no IDB como metodo_padrao
-  if (val) idbPut('config', { _id: 'metodo_padrao', valor: val }).catch(()=>{});
-  const isMck = val === 'Listas de Mackinnon';
-  mckBlock.style.display  = isMck ? 'block' : 'none';
-  biowrap.style.display   = isMck ? 'none'  : '';
-  tipoGroup.style.display = isMck ? 'none'  : '';
-}
+// Estrutura de cada entrada:
+{ cl, or, fa, sp, np, ha, se, ca, gu,  // taxonomia + habitat/sensib
+  mm, iu, ci,                           // MMA, IUCN, CITES
+  bi, en, ce }                          // biomas, endemismo, ocorrência CE
 ```
 
-**Métodos disponíveis no select:**
-Listas de Mackinnon · Ponto de escuta · Censo por transecto · Busca ativa · Encontro ocasional · Camera trap · Rede de neblina · Armadilha · Pitfall · Procura limitada por tempo · Observação embarcada
+| Campo | Desc | Total com dados |
+|-------|------|----------------|
+| `mm`  | MMA/SALVE | 84 espécies |
+| `iu`  | IUCN | 175 espécies |
+| `ci`  | CITES | 108 espécies |
+| `ce`  | Ocorrência CE | 820 espécies |
+| `en`  | Endemismo | 29 espécies |
+| `bi`  | Biomas | 108 espécies |
+
+**Fontes:** SBMz 2024, Inventário Aves CE 2021, Lista Répteis CE, Anfíbios CE, Portaria MMA 444/2014 (583 sp), Portaria MMA 1.667/2026 (305 peixes)
+
+---
+
+## APIs de Conservação (todas sem token)
+
+Disparadas automaticamente ao selecionar espécie no autocomplete (se online):
+
+```javascript
+buscarDadosWeb()   // orquestra as 3 buscas em paralelo
+buscarGBIF(sp)     // api.gbif.org — registros BR e CE
+buscarInat(sp)     // api.inaturalist.org — obs CE (place_id=7155)
+buscarCTFB(sp)     // fauna.jbrj.gov.br — status BR, biomas, estados
+```
+
+Cache em memória `_apiCache` para evitar repetição na sessão.
+
+---
+
+## Mapa Cartográfico (aba Mapa)
+
+- Leaflet.js + OpenStreetMap carregado lazy (só quando aba abre)
+- `utmParaLatLon(e, n, zone, letter)` — converte UTM → WGS84 (zonas 23-25 S, Brasil)
+- `extrairCoords(r)` — extrai do campo `r.coord` ou `r.utm`
+- Filtros por grupo taxonômico
+- Popup com espécie, data, ponto, método, IUCN/MMA
+- Requer internet para carregar tiles
+
+---
+
+## Exportação XLSX
+
+```javascript
+baixarXLSX()       // detecta Capacitor → usa Filesystem plugin; browser → blob URL
+compartilharXLSX() // Web Share API com arquivo; fallback → baixarXLSX()
+gerarXLSX()        // monta workbook: aba 'BANCO DE DADOS' + abas bio por grupo
+nomeArquivo()      // ex: "FAUNA_2026-05-25.xlsx"
+```
+
+**Download no Android (Capacitor):**
+1. `window.Capacitor.Plugins.Filesystem.writeFile()` → `/Documents/FAUNA_*.xlsx`
+2. Se falhar → Web Share API (`navigator.share({files})`)
+3. Se falhar → blob URL + `<a download>`
+
+**Abas do XLSX:** BANCO DE DADOS · AVIF · MAST · HERP · ICTI · QUIR
+
+---
+
+## IndexedDB
+
+**Nome:** `FaunaCampoDB` · **Versão:** `3`
+
+| Store | KeyPath | Conteúdo |
+|-------|---------|----------|
+| `registros` | `_id` | Registros manuais |
+| `biometria` | `_id` | Morfometria |
+| `campanhas` | `_id` | Campanhas |
+| `pontos` | `_id` | Pontos amostrais |
+| `config` | `_id` | Config (inclui `metodo_padrao`, `apiKey`) |
+| `perfil` | `_id` | Dados do consultor |
+
+```javascript
+async function idbGet(store, id)    // usa abrirDB() — NÃO usar db global direto
+async function idbPut(store, obj)   // salva/atualiza
+async function idbGetAll(store)     // lista todos
+async function abrirDB()            // abre/migra o banco
+```
+
+---
+
+## Persistência de dados (GH Pages / browser)
+
+- `salvarDados()`: dupla garantia — IDB + localStorage
+- `carregarDados()`: tenta IDB, fallback localStorage
+- Service Worker: network-first, CACHE_NAME dinâmico (Date.now())
+- Banner PWA aparece após 3s para usuários do browser (com instruções para instalar)
 
 ---
 
 ## Funções JavaScript Críticas
 
-### Inicialização
 ```javascript
-async function init()              // carrega IDB, config, perfil, restaura método salvo
-function irPara(panel, btn)        // navegação — sincroniza ctx-metodo → m-metodo
-function loadDarkMode()            // restaura preferência de dark mode
-```
+// ── Inicialização ──────────────────────────────────────────────
+async function init()                // carrega IDB, config, restaura método
+function irPara(panel, btn)          // navegação principal
+function loadDarkMode()              // restaura preferência dark mode
 
-### Dados / IDB
-```javascript
-async function idbPut(store, obj)       // salvar no IndexedDB
-async function idbGet(store, id)        // ler um item pelo id
-async function idbGetAll(store)         // ler todos do store
-async function salvarDados()            // persiste registros[]
-async function carregarDados()          // carrega registros[] do IDB
-function normalizarRegistro(r)          // padroniza campos (ATENÇÃO: renomeia horario→hora)
-```
+// ── Navegação especial ─────────────────────────────────────────
+// irPara('registros') → abre Dash na sub-aba Registros
+// irPara('campanhas') → abre Dash com btn[3] active
+// irPara('dashboard') → inicializa sub-aba Resumo
+// irPara('mapa')      → chama renderMapa()
 
-### ⚠️ Armadilha: normalizarRegistro
+// ── Dashboard ─────────────────────────────────────────────────
+function mudarDashTab(tab)           // 'resumo' | 'registros'
+function atualizarDtabBadge()        // atualiza contador no badge
+function renderDashboard()           // gráficos + estat. (esconde quando vazio)
+function atualizarDashInicio()       // saudação + stats zeradas
 
-```javascript
-// normalizarRegistro DELETA r.horario e cria r.hora
-// gerarXLSX deve usar: r.hora || r.horario
-if (n.horario !== undefined && n.hora === undefined) {
-  n.hora = n.horario;
-  delete n.horario;
-}
-```
+// ── Registros ─────────────────────────────────────────────────
+function renderRegistrosFiltrado()   // lista os record-items com filtros
+function filtrarDados(filtro, chip)  // todos/Aves/Mammalia/.../hoje/semana/campanha
 
-### Exportação XLSX
-```javascript
-function baixarXLSX()    // verifica XLSX disponível + null check + try-catch
-function gerarXLSX()     // monta workbook: aba 'BANCO DE DADOS' + abas de biometria por grupo
-function nomeArquivo()   // ex: "FAUNA_2026-05-10.xlsx"
-```
+// ── Autocomplete espécies ─────────────────────────────────────
+function acOnInput(val)              // filtra SPECIES_DB em tempo real
+function autoFillFromSpecies(s)      // preenche formulário + badges + busca APIs
+function aplicarStatusConservacao(s) // exibe badges de IUCN/MMA/CITES/CE/endem/biomas
+async function buscarDadosWeb()      // GBIF + iNat em background (auto, sem click)
 
-**Estrutura da planilha (26 colunas — FASE foi removida):**
-```
-PROJETO | CAMPANHA | ÁREA | PONTO | ZONA | UTM(X) | UTM(Y) |
-DATA | HORÁRIO | PERÍODO | ESTAÇÃO | MÉTODO | TIPO REG. | DESTINAÇÃO |
-MICROHABITAT | CLASSE | ORDEM | FAMÍLIA | ESPÉCIE | Nº INDIV. | SEXO |
-IUCN | MMA | NOTÁVEL | CONSULTOR | OBSERVAÇÕES
-```
-
-**Abas de biometria:** AVIF (Avifauna) · MAST (Mastofauna) · HERP (Herpetofauna) · ICTI (Ictiofauna) · QUIR (Quiropterofauna)
-
-### GPS
-```javascript
-function applyGpsResult(fieldId, metaId, detailId, pos, isFallback)
-// Após capturar GPS, atualiza pill no ctx-bar com zona UTM e precisão em metros
+// ── Formulário Manual ─────────────────────────────────────────
+function onMetodoChange(val)         // alterna MacKinnon/normal, persiste no IDB
+function adicionarManual()           // salva registro + chama salvarDados()
 ```
 
 ---
 
-## IndexedDB — Stores
-
-| Store | Conteúdo |
-|-------|----------|
-| `registros` | Registros manuais de fauna |
-| `biometria` | Registros de biometria |
-| `campanhas` | Campanhas criadas |
-| `pontos` | Pontos amostrais |
-| `config` | Configurações (inclui `metodo_padrao`) |
-| `perfil` | Dados do consultor |
-
----
-
-## CSS — Variáveis (Field Pro — modo normal)
+## CSS — Variáveis Principais (Field Pro)
 
 ```css
 --verde-medio: #16a34a   --verde-claro: #22c55e   --verde-suave: #f0fdf4
 --verde-borda: #bbf7d0   --borda: #e5e7eb          --areia: #f9fafb
---texto: #111827         --texto-suave: #374151    --branco: #ffffff
---perigo: #dc2626        --sucesso: #16a34a        --radius: 10px
+--areia-escura: #f3f4f6  --texto: #111827          --texto-suave: #374151
+--texto-muted: #6b7280   --branco: #ffffff          --radius: 10px
+--radius-sm: 8px         --sombra: 0 1px 3px rgba(0,0,0,.07)
 ```
 
-**⚠️ Não adicionar novos `var(--x)` sem definir no `:root` — causa campos sem borda.**
+⚠️ **Não adicionar `var(--x)` sem definir no `:root`** — causa campos sem borda.
 
 ---
 
-## Filtros na Aba Dados
-
-Chips disponíveis: Todos · 🐦 Aves · 🦁 Mamíf. · 🦎 Répteis · 🐸 Anfíb. · 🐟 Peixes · ⭐ Notáveis · 📅 Hoje · 📅 Semana · 🗂️ Campanha
-
----
-
-## Regras de Validação
-
-```python
-# 1. JS Sintaxe
-node --check /tmp/wl.js
-
-# 2. HTML depth (divs balanceados)
-d = html.count('<div') - html.count('</div>')  # deve ser 0
-
-# 3. Nav no root
-nd = nb.count('<div') - nb.count('</div>')  # deve ser 0 antes da <nav>
-
-# 4. CSS vars definidas
-undef = used_vars - def_vars  # deve ser vazio
-```
-
----
-
-## Bugs Históricos (não repetir)
+## Bugs Históricos (NÃO repetir)
 
 | Bug | Causa | Fix |
 |-----|-------|-----|
-| Nav sumia | `<nav>` dentro de um `<div class="panel">` | Mover nav para root level |
-| Exportação vazia | `r.horario` deletado por `normalizarRegistro` | Usar `r.hora \|\| r.horario` |
-| Exportação travava | `XLSX.writeFile(null, ...)` sem null-check | Verificar `if (!wb) return` |
-| MacKinnon não aparecia | `onMetodoChange` não chamado no carregamento | Chamar no `init()` e no `irPara()` |
-| Campos sem borda | `var(--borda)` usada mas não definida no `:root` | Sempre definir vars no `:root` |
-| `async async function salvarBio` | Fix de async aplicado 2x | Verificar duplicatas |
-| Colunas XLSX desalinhadas | cabeçalho vs return | Sempre contar colunas = campos |
-| FASE sempre vazia | Coluna no cabeçalho sem campo no form | Coluna removida (v2.1) |
-| Bio não exportada | Filtro usava `r._grupo` (inexistente, campo é `r._tipo`) | Corrigido para `r._tipo` |
-| Método não salvo | parseInt fallback `\|\| 0` | Corrigido para `\|\| 1` |
+| Abas não funcionavam | `</script></body></html>` faltando no final | Sempre fechar o script no final |
+| `irPara is not defined` | Script principal sem `</script>` | Idem |
+| www/ desatualizado | Versão antiga versionada | `cp index.html www/index.html` |
+| CSS legado sobrescrevia Field Pro | Bloco v2.0 após redesign | Removido |
+| Offline-bar invisível no claro | `display:none` hardcoded | Removido |
+| dsub-registros invisível | 1 `</div>` faltando no dsub-resumo → filho do pai errado | Fechar todas as divs |
+| XLSX não baixava no Android | `XLSX.writeFile()` bloqueado no WebView | `Capacitor.Plugins.Filesystem` |
+| Bio não exportada no XLSX | Filtro usava `r._grupo` (inexistente) | Corrigido para `r._tipo` |
+| Config store keyPath errado | `'chave'` em vez de `'_id'` | Corrigido, IDB_VERSION → 3 |
+| idbGet sem abrirDB | Usava variável global `db` | Usa `abrirDB()` agora |
+| YAML workflow quebrado | Heredoc Java inline no YAML | Arquivo separado `android-src/` |
+| Dados somem no browser | idbGet + SW cache fixo + store config errada | 4 bugs corrigidos |
 
 ---
 
-## Features Implementadas (v2.1)
+## Validação (rodar antes de commitar)
 
-- ✅ Dashboard gráfico (donut chart canvas puro + barras por ponto + estado vazio orientativo)
-- ✅ Entrada por voz (Web Speech API)
-- ✅ Histórico de espécies recentes (chips clicáveis)
-- ✅ Filtros rápidos: grupos taxonômicos + notáveis + **Hoje / Semana / Campanha**
-- ✅ Marcador de espécie notável (⭐ persistido no IDB)
-- ✅ Badge IUCN + MMA automático
-- ✅ MacKinnon integrado como método inline
-- ✅ Ícone dinâmico por Classe
-- ✅ Barra de contexto ativo (ctx-bar) com **pill GPS ao vivo**
-- ✅ Barra offline inteligente
-- ✅ Cards de registro ricos
-- ✅ SheetJS embutido inline
-- ✅ GPS nativo Android (Capacitor) com fallback web
-- ✅ Dark mode completo — Nature Dark (alta legibilidade em campo)
-- ✅ RECORD_AUDIO no AndroidManifest
-- ✅ Exportação XLSX com **abas de biometria por grupo**
-- ✅ Método amostral **persistido entre sessões** (IDB config)
-- ✅ Web Share API para registros individuais
-- ✅ Design Field Pro (modo normal) — branco, profissional
+```bash
+# 1. JS sem erros de sintaxe
+python3 -c "
+import re, subprocess
+with open('index.html') as f: html = f.read()
+scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+with open('/tmp/check.js','w') as f: f.write('\n'.join(scripts))
+res = subprocess.run(['node','--check','/tmp/check.js'], capture_output=True, text=True)
+print('✅ JS OK' if res.returncode==0 else '❌ '+res.stderr[:200])
+"
 
-## Pendências
+# 2. HTML divs balanceados (no HTML puro, excluindo scripts)
+python3 -c "
+import re
+with open('index.html') as f: html = f.read()
+hn = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
+hn = re.sub(r'<style[^>]*>.*?</style>', '', hn, flags=re.DOTALL)
+d = hn.count('<div') - hn.count('</div>')
+print(f'Divs: {d} (✅ 0 = ok)')
+"
 
-- [ ] Verificar "WildLog" no INPI (Classe 09 e 42)
-- [ ] Modularizar o index.html (separar em arquivos por feature)
+# 3. Nav no root level
+python3 -c "
+import re
+with open('index.html') as f: html = f.read()
+npos = html.find('<nav class=\"nav-bar\">')
+nb = re.sub(r'<script[^>]*>.*?</script>', '', html[:npos], flags=re.DOTALL)
+nb = re.sub(r'<style[^>]*>.*?</style>', '', nb, flags=re.DOTALL)
+print(f'Nav depth: {nb.count(\"<div\") - nb.count(\"</div>\")} (✅ 0 = ok)')
+"
+
+# 4. Arquivo termina corretamente
+tail -3 index.html
+
+# 5. www/ sincronizado
+cp index.html www/index.html && echo "✅ www/ ok"
+```
 
 ---
 
 ## Build APK
 
-O workflow `.github/workflows/build-apk.yml`:
-1. Cria `www/index.html` a partir do `index.html` da raiz
-2. Instala e copia SheetJS para `www/xlsx.full.min.js` (fallback)
-3. Instala Capacitor e adiciona plataforma Android
-4. Compila com Gradle e gera `WildLog.apk`
-5. Publica como GitHub Release
+O workflow `.github/workflows/build-apk.yml` (16 steps):
+1. Checkout + Java 17 + Node 22
+2. Copiar `index.html` → `www/index.html`
+3. `npm install` (Capacitor + @capacitor/filesystem + @capacitor/share)
+4. `npx cap add android` + `npx cap sync android`
+5. Copiar `android-src/MainActivity.java` (DownloadListener para XLSX)
+6. Substituir AndroidManifest (permissões + requestLegacyExternalStorage)
+7. Gradle build → `WildLog.apk`
+8. GitHub Release automático
 
-Para gerar novo APK: fazer push na branch `main` ou disparar manualmente em **Actions → Run workflow**.
+Para gerar: push no `main` ou Actions → Run workflow.
 
 ---
 
-## Testes
+## Features Implementadas (v2.1)
 
-```bash
-pip install playwright
-playwright install chromium
-python3 tests/test_wildlog.py
-```
+- ✅ 1.254 espécies no SPECIES_DB com dados de conservação
+- ✅ Badges automáticos: IUCN, MMA, CITES, CE, Endemismo, Biomas
+- ✅ Busca automática GBIF + iNaturalist ao selecionar espécie (sem token)
+- ✅ Mapa cartográfico Leaflet + OpenStreetMap (aba 🗺️ Mapa)
+- ✅ Conversão UTM → lat/lon (zonas 23-25 S)
+- ✅ Dash com sub-abas: 📊 Resumo | 📋 Registros N
+- ✅ Filtros de data: Hoje / Semana / Campanha
+- ✅ Exportação XLSX com abas de biometria por grupo
+- ✅ Compartilhamento via Web Share API (arquivo real)
+- ✅ Download XLSX via Capacitor.Plugins.Filesystem
+- ✅ Método amostral persistido entre sessões
+- ✅ Field Pro (claro) + Nature Dark (escuro)
+- ✅ GPS nativo + pill ao vivo no ctx-bar
+- ✅ MacKinnon integrado como método inline
+- ✅ Entrada por voz (Web Speech API)
+- ✅ Persistência IDB + localStorage (dupla garantia)
+- ✅ PWA instalável + banner de aviso no browser
+- ✅ Service Worker network-first com versionamento dinâmico
+
+## Pendências
+
+- [ ] Verificar "WildLog" no INPI (Classe 09 e 42)
+- [ ] Completar IUCN para as ~1.000 espécies sem status (API IUCN v4 requer token gratuito em api.iucnredlist.org)
+- [ ] Testar Capacitor.Plugins.Filesystem no APK real (Android Downloads)
+- [ ] Login por perfil de consultor (cada biólogo vê só seus dados)
 
 ---
 
