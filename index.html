@@ -1968,9 +1968,6 @@ button[data-gps], button[onclick*="captureGps"] {
   padding: 8px 14px;
   background: var(--branco);
   border-bottom: 1px solid var(--verde-borda);
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 .filtro-chip {
   padding: 4px 10px;
@@ -2597,6 +2594,100 @@ body.dark-mode .mapa-header { background: #0d2b0d; border-color: #2d5a2d; }
 body.dark-mode .mapa-legenda { background: #0d2b0d; border-color: #2d5a2d; }
 body.dark-mode .mapa-info { color: rgba(74,222,128,0.5); }
 body.dark-mode .legenda-item { color: #86efac; }
+
+/* ── Sub-abas do Dashboard ─────────────────────────── */
+.dash-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--borda);
+  background: var(--branco);
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+.dash-tab {
+  flex: 1;
+  padding: 10px 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texto-muted);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: color .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.dash-tab.active {
+  color: var(--verde-medio);
+  border-bottom-color: var(--verde-medio);
+  font-weight: 600;
+}
+.dtab-badge {
+  background: var(--verde-medio);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+body.dark-mode .dash-tabs { background: #0a1a0a; border-color: #2d5a2d; }
+body.dark-mode .dash-tab { color: rgba(74,222,128,0.4); }
+body.dark-mode .dash-tab.active { color: #4ade80; border-bottom-color: #4ade80; }
+body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
+
+.dsub {
+  display: none;
+}
+.dsub.active {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#dsub-resumo {
+  padding: 12px 14px 80px;
+}
+#dsub-registros {
+  padding: 8px 12px 80px;
+}.dsub.active { display: block; }
+
+.record-count-bar {
+  padding: 6px 14px;
+  font-size: 11px;
+  color: var(--texto-muted);
+  font-weight: 500;
+  background: var(--areia-escura);
+  border-bottom: 1px solid var(--borda);
+}
+
+/* Panel dashboard com sub-abas */
+#panel-dashboard {
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 160px);
+  overflow: hidden;
+}
+#dsub-resumo {
+  padding: 12px 14px 80px;
+}
+#dsub-registros {
+  padding-bottom: 80px;
+}
+
+#panel-dashboard.active {
+  display: flex !important;
+}
 </style>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4107,6 +4198,22 @@ body.dark-mode .legenda-item { color: #86efac; }
 <!-- DASHBOARD -->
 <div class="panel" id="panel-dashboard">
 
+  <!-- Sub-abas internas: Resumo | Registros -->
+  <div class="dash-tabs" id="dash-tabs">
+    <button class="dash-tab active" id="dtab-resumo"
+      onclick="mudarDashTab('resumo')">
+      <span>📊</span> Resumo
+    </button>
+    <button class="dash-tab" id="dtab-registros"
+      onclick="mudarDashTab('registros')">
+      <span>📋</span> Registros
+      <span class="dtab-badge" id="dtab-badge">0</span>
+    </button>
+  </div>
+
+  <!-- ══ SUB-PAINEL: RESUMO ══════════════════════════════ -->
+  <div id="dsub-resumo" class="dsub active">
+
   <!-- Dashboard de início rápido -->
   <div class="dash-inicio" id="dash-inicio">
     <div class="dash-inicio-saudacao" id="dash-inicio-saudacao">Olá! 👋</div>
@@ -4136,7 +4243,7 @@ body.dark-mode .legenda-item { color: #86efac; }
       <div class="dash-acao" onclick="(function(){const el=document.getElementById('m-metodo');if(el){el.value='Listas de Mackinnon';onMetodoChange('Listas de Mackinnon');}irPara('manual',document.querySelectorAll('.nav-btn')[1]);})()">
         <span class="da-icon">🐦</span><span>MacKinnon</span>
       </div>
-      <div class="dash-acao" onclick="irPara('registros', document.querySelectorAll('.nav-btn')[4])">
+      <div class="dash-acao" onclick="irPara('registros', null)">
         <span class="da-icon">📋</span><span>Ver dados</span>
       </div>
       <div class="dash-acao" onclick="irPara('enviar', document.querySelectorAll('.nav-btn')[5])">
@@ -4318,10 +4425,10 @@ body.dark-mode .legenda-item { color: #86efac; }
     </div>
 
   </div>
-</div>
+  </div><!-- /dsub-resumo -->
 
-<!-- REGISTROS -->
-<div class="panel" id="panel-registros">
+  <!-- ══ SUB-PAINEL: REGISTROS ══════════════════════════ -->
+  <div id="dsub-registros" class="dsub" style="display:none">
   <div class="filtros-bar" id="filtros-bar">
     <span class="filtro-chip ativo" onclick="filtrarDados('todos', this)">Todos</span>
     <span class="filtro-chip" onclick="filtrarDados('Aves', this)">🐦 Aves</span>
@@ -4339,6 +4446,10 @@ body.dark-mode .legenda-item { color: #86efac; }
   <div class="section-header" style="margin-top:16px">📏 Registros de biometria</div>
   <div id="bio-lista"></div>
 </div>
+
+  </div><!-- /dsub-registros -->
+
+</div><!-- /panel-dashboard -->
 
 <!-- ENVIAR -->
 <div class="panel" id="panel-mapa">
@@ -4550,10 +4661,6 @@ body.dark-mode .legenda-item { color: #86efac; }
   <button class="nav-btn" onclick="irPara('dashboard', this)">
     <span class="nav-icon">📊</span>
     <span class="nav-label">Dash</span>
-  </button>
-  <button class="nav-btn" onclick="irPara('registros', this)">
-    <span class="nav-icon">📋</span>
-    <span class="nav-label">Dados</span>
   </button>
   <button class="nav-btn" onclick="irPara('mapa', this)">
     <span class="nav-icon">🗺️</span>
@@ -6566,9 +6673,16 @@ function irPara(panel, btn) {
     panel = 'manual';
     btn = document.querySelectorAll('.nav-btn')[1];
   }
-  // Campanhas não tem botão na nav — marcar Dash como próximo mais relacionado
+  // Campanhas não tem botão na nav — marcar Dash
   if (panel === 'campanhas' && !btn) {
     btn = document.querySelectorAll('.nav-btn')[3];
+  }
+  // Registros agora fica dentro do Dash — redirecionar para sub-aba
+  if (panel === 'registros') {
+    panel = 'dashboard';
+    if (!btn) btn = document.querySelectorAll('.nav-btn')[3];
+    // Após navegar, abrir sub-aba registros
+    setTimeout(() => mudarDashTab('registros'), 60);
   }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -6577,6 +6691,19 @@ function irPara(panel, btn) {
   if (panel === 'dashboard') { atualizarDashInicio(); renderDashboard(); }
   if (panel === 'mapa') {
     setTimeout(() => renderMapa(), 50);
+  }
+  if (panel === 'dashboard') {
+    setTimeout(() => mudarDashTab('resumo'), 50);
+  }
+  if (panel === 'dashboard') {
+    // Garantir sub-aba Resumo ativa por padrão (a menos que registros seja solicitado)
+    setTimeout(() => {
+      const activeSub = document.querySelector('.dsub.active');
+      if (!activeSub || activeSub.id === 'dsub-resumo') {
+        mudarDashTab('resumo');
+      }
+      atualizarDtabBadge();
+    }, 60);
   }
   if (panel === 'enviar') {
     // Popular campos de config com valores salvos
@@ -8495,7 +8622,8 @@ function renderDashboard() {
   // Filtrar por campanha ativa se houver, senão mostrar todos
   // Estado vazio orientativo
   const totalAll = registros.length + bioRegistros.length;
-  const dashEl = document.getElementById('panel-dashboard');
+  // Trabalhar dentro do dsub-resumo (sub-painel de resumo)
+  const dashEl = document.getElementById('dsub-resumo') || document.getElementById('panel-dashboard');
   const emptyId = 'dash-empty-state';
   const existing = document.getElementById(emptyId);
   if (existing) existing.remove();
@@ -8523,16 +8651,16 @@ function renderDashboard() {
     // Atualizar saudação, stats zeradas e ações rápidas
     atualizarDashInicio();
     // Esconder seções de gráficos quando não há dados
-    const chartsRow = document.querySelector('.dash-charts-row');
-    const resumoCard = document.querySelector('#panel-dashboard .card');
+    const chartsRow = document.querySelector('#dsub-resumo .dash-charts-row');
+    const resumoCard = document.querySelector('#dsub-resumo .card');
     if (chartsRow) chartsRow.style.display = 'none';
     if (resumoCard) resumoCard.style.display = 'none';
     return;
   }
 
     // Restaurar seções de gráficos
-  const chartsRowR = document.querySelector('.dash-charts-row');
-  const resumoCardR = document.querySelector('#panel-dashboard .card');
+  const chartsRowR = document.querySelector('#dsub-resumo .dash-charts-row');
+  const resumoCardR = document.querySelector('#dsub-resumo .card');
   if (chartsRowR) chartsRowR.style.display = '';
   if (resumoCardR) resumoCardR.style.display = '';
 
@@ -8802,6 +8930,7 @@ async function salvarDados() {
     try { localStorage.setItem(DB_KEY, JSON.stringify(registros)); } catch(e2) {}
     atualizarResumo();
     atualizarBarraSalvo();
+    atualizarDtabBadge();
   } catch(e) {
     console.warn('IDB falhou, usando localStorage:', e);
     try { localStorage.setItem(DB_KEY, JSON.stringify(registros)); } catch(e2) {}
@@ -11605,6 +11734,56 @@ async function buscarInat(especie) {
   _apiCache[key] = result;
   return result;
 }
+
+// ── Sub-abas do Dashboard ───────────────────────────────
+function mudarDashTab(tab) {
+  // Atualizar botões
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('dtab-' + tab);
+  if (btn) btn.classList.add('active');
+
+  // Mostrar sub-painel correto
+  document.querySelectorAll('.dsub').forEach(d => {
+    d.style.display = 'none';
+    d.classList.remove('active');
+  });
+  const sub = document.getElementById('dsub-' + tab);
+  if (sub) {
+    // Calcular altura disponível: panel - tabs bar
+    const panel = document.getElementById('panel-dashboard');
+    const tabs  = document.getElementById('dash-tabs');
+    const tabsH = tabs ? tabs.offsetHeight : 44;
+    const panelH = panel ? panel.clientHeight : window.innerHeight - 160;
+    const availH = Math.max(200, panelH - tabsH);
+    sub.style.cssText = 'display:block; height:' + availH + 'px; overflow-y:auto; -webkit-overflow-scrolling:touch;';
+    sub.classList.add('active');
+    // Forçar reflow
+    void sub.offsetHeight;
+  }
+
+  // Renderizar conforme a aba
+  if (tab === 'resumo') {
+    renderDashboard();
+  } else if (tab === 'registros') {
+    renderRegistrosFiltrado();
+    renderBioRegistros(document.getElementById('bio-lista'));
+    // Atualizar badge
+    const total = registros.length + (window.bioRegistros ? bioRegistros.length : 0);
+    const badge = document.getElementById('dtab-badge');
+    if (badge) { badge.textContent = total; badge.style.display = total > 0 ? '' : 'none'; }
+  }
+}
+
+// Atualizar badge de registros sempre que dados mudam
+function atualizarDtabBadge() {
+  const badge = document.getElementById('dtab-badge');
+  if (badge) {
+    const total = registros.length + (window.bioRegistros ? bioRegistros.length : 0);
+    badge.textContent = total;
+    badge.style.display = total > 0 ? '' : 'none';
+  }
+}
+
 </script>
 </body>
 </html>
