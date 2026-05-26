@@ -42,7 +42,7 @@ jobs:
           ls -lah www/
 
       - name: Instalar Capacitor
-        run: npm install && npm install @capacitor/filesystem@6.0.0 @capacitor/share@6.0.0 --save
+        run: npm install
 
       - name: Adicionar plataforma Android
         run: npx cap add android
@@ -201,6 +201,8 @@ jobs:
         run: |
           APK="android/app/build/outputs/apk/debug/FieldNote.apk"
           ls -lh "$APK" || { echo "::error::APK nao encontrado: $APK"; exit 1; }
+          gh release delete "build-${{ github.run_number }}" \
+            --repo "${{ github.repository }}" --yes 2>/dev/null || true
           GH_OUT=$(gh release create "build-${{ github.run_number }}" "$APK" \
             --repo "${{ github.repository }}" \
             --title "FieldNote Build ${{ github.run_number }}" \
