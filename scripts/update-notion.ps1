@@ -81,11 +81,13 @@ $body = @{
     children   = $blocks
 } | ConvertTo-Json -Depth 20
 
+$bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+
 Write-Host "[FieldNote] Enviando relatorio para o Notion..."
 
 try {
     $r = Invoke-RestMethod -Uri "https://api.notion.com/v1/pages" `
-        -Method POST -Headers $headers -Body $body -ErrorAction Stop
+        -Method POST -Headers $headers -Body $bodyBytes -ErrorAction Stop
     Write-Host "OK! Relatorio criado: $($r.url)"
 } catch {
     $err = $_.ErrorDetails.Message | ConvertFrom-Json -ErrorAction SilentlyContinue
