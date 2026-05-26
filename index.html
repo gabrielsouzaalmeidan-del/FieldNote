@@ -256,7 +256,7 @@ textarea { resize: vertical; min-height: 60px; }
 .record-item {
   background: var(--branco);
   border: 1px solid var(--borda);
-  border-left: 3px solid var(--verde-medio);
+  border-left: 4px solid var(--verde-medio);
   border-radius: var(--radius);
   padding: 10px 12px;
   margin-bottom: 8px;
@@ -264,7 +264,13 @@ textarea { resize: vertical; min-height: 60px; }
   flex-direction: column;
   gap: 6px;
   transition: box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
 }
+.record-item.grupo-aves      { border-left-color: #3b82f6; }
+.record-item.grupo-mammalia  { border-left-color: #f59e0b; }
+.record-item.grupo-reptilia  { border-left-color: #10b981; }
+.record-item.grupo-amphibia  { border-left-color: #8b5cf6; }
+.record-item.grupo-pisces    { border-left-color: #06b6d4; }
 .record-species { font-size: 14px; font-weight: 600; color: var(--texto); font-style: italic; }
 .record-meta { font-size: 12px; color: var(--texto-muted); margin-top: 3px; line-height: 1.6; }
 .record-del {
