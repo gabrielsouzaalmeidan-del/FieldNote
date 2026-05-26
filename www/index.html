@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <meta name="theme-color" content="#1a2e1a" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<title>WildLog</title>
+<title>FieldNote</title>
 
 <!-- Capacitor core — carregado apenas no APK -->
 <script>
@@ -2601,12 +2601,12 @@ body.dark-mode .legenda-item { color: #86efac; }
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="WildLog">
+  <meta name="apple-mobile-web-app-title" content="FieldNote">
   <meta name="theme-color" content="#1a2e1a">
   <script>
-    const SW_CODE = "const CACHE_NAME = 'wildlog-v" + Date.now() + "';\n\nself.addEventListener('install', e => {\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.map(k => caches.delete(k)))\n    ).then(() => self.clients.claim())\n  );\n});\n\nself.addEventListener('fetch', e => {\n  // Network-first: sempre buscar versão mais recente\n  e.respondWith(\n    fetch(e.request).catch(() => caches.match(e.request))\n  );\n});";
+    const SW_CODE = "const CACHE_NAME = 'FieldNote-v" + Date.now() + "';\n\nself.addEventListener('install', e => {\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.map(k => caches.delete(k)))\n    ).then(() => self.clients.claim())\n  );\n});\n\nself.addEventListener('fetch', e => {\n  // Network-first: sempre buscar versão mais recente\n  e.respondWith(\n    fetch(e.request).catch(() => caches.match(e.request))\n  );\n});";
     const PWA_MANIFEST = {
-  "name": "WildLog",
+  "name": "FieldNote",
   "short_name": "Fauna",
   "description": "Coleta de dados faunísticos em campo",
   "start_url": "./",
@@ -2630,7 +2630,7 @@ body.dark-mode .legenda-item { color: #86efac; }
     <div class="header-brand">
       <span class="header-leaf">🌿</span>
       <div class="header-titles">
-        <span class="header-title">WildLog</span>
+        <span class="header-title">FieldNote</span>
         <span class="header-sub" id="header-sub">v2.1 · Ceará</span>
       </div>
     </div>
@@ -6148,7 +6148,7 @@ async function compartilharRegistro(idx) {
   const iucn = r._iucn ? ` | IUCN: ${r._iucn}` : '';
   const mma  = r._mma  ? ` | MMA: ${r._mma}`   : '';
   const texto = [
-    `🌿 *WildLog — Registro de campo*`,
+    `🌿 *FieldNote — Registro de campo*`,
     ``,
     `📌 Espécie: ${r.especie || '—'}`,
     `📋 Classe: ${r.classe || '—'} | Família: ${r.familia || '—'}`,
@@ -6159,12 +6159,12 @@ async function compartilharRegistro(idx) {
     `🏷️ Status: ${r.tipo_registro || '—'}${iucn}${mma}`,
     r.obs ? `💬 Obs: ${r.obs}` : '',
     ``,
-    `📲 Enviado via WildLog App`
+    `📲 Enviado via FieldNote App`
   ].filter(Boolean).join('\n');
 
   if (navigator.share) {
     try {
-      await navigator.share({ title: `WildLog — ${r.especie || 'Registro'}`, text: texto });
+      await navigator.share({ title: `FieldNote — ${r.especie || 'Registro'}`, text: texto });
     } catch(e) {
       if (e.name !== 'AbortError') copiarParaArea(texto);
     }
@@ -6475,7 +6475,7 @@ async function init() {
         banner.innerHTML = `
           <span style="font-size:22px">📌</span>
           <div style="flex:1">
-            <div style="font-weight:600;margin-bottom:2px">Instale o WildLog para não perder dados</div>
+            <div style="font-weight:600;margin-bottom:2px">Instale o FieldNote para não perder dados</div>
             <div style="font-size:11px;opacity:0.8">No Safari: compartilhar → Adicionar à Tela de Início<br>No Chrome: menu ⋮ → Instalar aplicativo</div>
           </div>
           <button onclick="document.getElementById('pwa-banner').remove();localStorage.setItem('_pwa_aviso_v1','1')"
@@ -7051,7 +7051,7 @@ function baixarXLSX() {
             const CapShare = window.Capacitor.Plugins.Share;
             if (CapShare && result.uri) {
               CapShare.share({
-                title: 'WildLog — ' + nome,
+                title: 'FieldNote — ' + nome,
                 url: result.uri,
                 dialogTitle: 'Salvar planilha'
               });
@@ -7110,7 +7110,7 @@ async function compartilharXLSX() {
     // Tentar Web Share API com arquivo
     if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
       await navigator.share({
-        title: 'WildLog — ' + nome,
+        title: 'FieldNote — ' + nome,
         text: registros.length + ' registros de fauna',
         files: [arquivo]
       });
@@ -9055,7 +9055,7 @@ function instalarApp() {
   });
 }
 
-window.addEventListener('appinstalled', () => toast('✅ WildLog instalado!'));
+window.addEventListener('appinstalled', () => toast('✅ FieldNote instalado!'));
 
 
 // ══════════════════════════════════════════════════════════
@@ -11562,7 +11562,7 @@ async function buscarCTFB(especie) {
   // CTFB API REST — fauna.jbrj.gov.br
   const url = `https://fauna.jbrj.gov.br/fauna/api/v1/species?q=${encodeURIComponent(especie)}&kingdom=Animalia`;
   const res  = await fetch(url, {
-    headers: { 'Accept': 'application/json', 'User-Agent': 'WildLog/2.1' }
+    headers: { 'Accept': 'application/json', 'User-Agent': 'FieldNote/2.1' }
   });
   if (!res.ok) throw new Error(`CTFB: ${res.status}`);
   const data = await res.json();
@@ -11608,3 +11608,4 @@ async function buscarInat(especie) {
 </script>
 </body>
 </html>
+

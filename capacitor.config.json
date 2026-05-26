@@ -1,6 +1,6 @@
 {
-  "appId": "br.com.wildlog.app",
-  "appName": "WildLog",
+  "appId": "br.com.fieldnote.app",
+  "appName": "FieldNote",
   "webDir": "www",
   "android": {
     "allowMixedContent": true

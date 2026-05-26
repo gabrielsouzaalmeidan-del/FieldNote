@@ -1,4 +1,4 @@
-# setup.ps1 — WildLog / Claude Code environment setup
+# setup.ps1 — FieldNote / Claude Code environment setup
 # Run once on any machine after git clone/pull to activate all skills,
 # commands, plugins, and project hooks automatically.
 #
@@ -12,7 +12,7 @@ $claudeHome  = "$env:USERPROFILE\.claude"
 $claudeProj  = "$projectRoot\.claude"
 
 Write-Host ""
-Write-Host "WildLog — Claude Code Setup" -ForegroundColor Cyan
+Write-Host "FieldNote — Claude Code Setup" -ForegroundColor Cyan
 Write-Host "Project : $projectRoot"
 Write-Host "Claude  : $claudeHome"
 Write-Host ""

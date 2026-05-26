@@ -1,4 +1,4 @@
-package br.com.wildlog.app;
+package br.com.fieldnote.app;
 
 import android.app.DownloadManager;
 import android.content.Context;
@@ -59,7 +59,7 @@ public class MainActivity extends BridgeActivity {
                     DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url));
                     req.setMimeType(mimeType);
                     req.setTitle(filename);
-                    req.setDescription("WildLog exportacao");
+                    req.setDescription("FieldNote exportacao");
                     req.setNotificationVisibility(
                         DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                     req.setDestinationInExternalPublicDir(

@@ -1,10 +1,10 @@
-# CLAUDE.md — WildLog
+# CLAUDE.md — FieldNote
 
 Guia completo do projeto para o Claude Code. Leia este arquivo antes de qualquer edição.
 
 ---
 
-## O que é o WildLog
+## O que é o FieldNote
 
 App Android de coleta de dados de fauna silvestre em campo, desenvolvido para biólogos e consultores ambientais brasileiros. Funciona **100% offline** (IndexedDB + SheetJS embutido), sem backend, sem login.
 
@@ -306,7 +306,7 @@ undef = used_vars - def_vars  # deve ser vazio
 
 ## Pendências
 
-- [ ] Verificar "WildLog" no INPI (Classe 09 e 42)
+- [ ] Verificar "FieldNote" no INPI (Classe 09 e 42)
 - [ ] Modularizar o index.html (separar em arquivos por feature)
 
 ---
@@ -317,7 +317,7 @@ O workflow `.github/workflows/build-apk.yml`:
 1. Cria `www/index.html` a partir do `index.html` da raiz
 2. Instala e copia SheetJS para `www/xlsx.full.min.js` (fallback)
 3. Instala Capacitor e adiciona plataforma Android
-4. Compila com Gradle e gera `WildLog.apk`
+4. Compila com Gradle e gera `FieldNote.apk`
 5. Publica como GitHub Release
 
 Para gerar novo APK: fazer push na branch `main` ou disparar manualmente em **Actions → Run workflow**.
@@ -360,7 +360,7 @@ Esse script:
 ```bash
 pip install playwright
 playwright install chromium
-python3 tests/test_wildlog.py
+python3 tests/test_fieldnote.py
 ```
 
 ---

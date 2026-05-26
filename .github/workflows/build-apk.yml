@@ -1,4 +1,4 @@
-name: Build APK - WildLog
+name: Build APK - FieldNote
 
 on:
   push:
@@ -162,13 +162,13 @@ jobs:
 
       - name: Corrigir nome no strings.xml
         run: |
-          sed -i 's|<string name="app_name">.*</string>|<string name="app_name">WildLog</string>|g' \
+          sed -i 's|<string name="app_name">.*</string>|<string name="app_name">FieldNote</string>|g' \
             android/app/src/main/res/values/strings.xml
           echo "=== strings.xml ===" && cat android/app/src/main/res/values/strings.xml
 
       - name: Adicionar suporte a download de arquivos no WebView
         run: |
-          MAIN_DIR="android/app/src/main/java/br/com/wildlog/app"
+          MAIN_DIR="android/app/src/main/java/br/com/fieldnote/app"
           mkdir -p "$MAIN_DIR"
           cp android-src/MainActivity.java "$MAIN_DIR/MainActivity.java"
           echo "=== MainActivity.java instalado ==="
@@ -184,32 +184,32 @@ jobs:
 
       - name: Renomear APK
         run: |
-          mv android/app/build/outputs/apk/debug/app-debug.apk              android/app/build/outputs/apk/debug/WildLog.apk
-          echo "APK renomeado para WildLog.apk"
+          mv android/app/build/outputs/apk/debug/app-debug.apk              android/app/build/outputs/apk/debug/FieldNote.apk
+          echo "APK renomeado para FieldNote.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WildLog-APK
-          path: android/app/build/outputs/apk/debug/WildLog.apk
+          name: FieldNote-APK
+          path: android/app/build/outputs/apk/debug/FieldNote.apk
           retention-days: 30
 
       - name: Criar Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: "WildLog — Build ${{ github.run_number }}"
+          name: "FieldNote — Build ${{ github.run_number }}"
           body: |
-            ## 📱 WildLog — APK Android
+            ## 📱 FieldNote — APK Android
             **Correções:**
             - ✅ Ícone personalizado (XMLs adaptativos removidos)
             - ✅ GPS com permissões nativas
-            - ✅ Nome WildLog
+            - ✅ Nome FieldNote
             **Como instalar:**
             1. Desinstale a versão anterior
             2. Baixe o `.apk` e instale
             **Build:** #${{ github.run_number }}
-          files: android/app/build/outputs/apk/debug/WildLog.apk
+          files: android/app/build/outputs/apk/debug/FieldNote.apk
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

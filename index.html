@@ -2604,7 +2604,7 @@ body.dark-mode .legenda-item { color: #86efac; }
   <meta name="apple-mobile-web-app-title" content="FieldNote">
   <meta name="theme-color" content="#1a2e1a">
   <script>
-    const SW_CODE = "const CACHE_NAME = 'wildlog-v" + Date.now() + "';\n\nself.addEventListener('install', e => {\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.map(k => caches.delete(k)))\n    ).then(() => self.clients.claim())\n  );\n});\n\nself.addEventListener('fetch', e => {\n  // Network-first: sempre buscar versão mais recente\n  e.respondWith(\n    fetch(e.request).catch(() => caches.match(e.request))\n  );\n});";
+    const SW_CODE = "const CACHE_NAME = 'fieldnote-v" + Date.now() + "';\n\nself.addEventListener('install', e => {\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', e => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.map(k => caches.delete(k)))\n    ).then(() => self.clients.claim())\n  );\n});\n\nself.addEventListener('fetch', e => {\n  // Network-first: sempre buscar versão mais recente\n  e.respondWith(\n    fetch(e.request).catch(() => caches.match(e.request))\n  );\n});";
     const PWA_MANIFEST = {
   "name": "FieldNote",
   "short_name": "Fauna",
@@ -11608,3 +11608,4 @@ async function buscarInat(especie) {
 </script>
 </body>
 </html>
+
