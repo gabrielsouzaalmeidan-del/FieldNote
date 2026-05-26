@@ -17,6 +17,17 @@ Write-Host "Project : $projectRoot"
 Write-Host "Claude  : $claudeHome"
 Write-Host ""
 
+# ── 0. Git remote ─────────────────────────────────────────────────────────────
+Write-Host "[0/4] Configurando git remote ..." -ForegroundColor Yellow
+$correctRemote = "https://github.com/gabrielsouzaalmeidan-del/FieldNote.git"
+$currentRemote = git -C $projectRoot remote get-url origin 2>$null
+if ($currentRemote -ne $correctRemote) {
+    git -C $projectRoot remote set-url origin $correctRemote
+    Write-Host "    Remote atualizado: $correctRemote" -ForegroundColor Green
+} else {
+    Write-Host "    Remote já correto." -ForegroundColor Green
+}
+
 # ── 1. Skills (global) ────────────────────────────────────────────────────────
 Write-Host "[1/4] Copiando skills para ~/.claude/skills/ ..." -ForegroundColor Yellow
 New-Item -ItemType Directory -Force "$claudeHome\skills" | Out-Null
