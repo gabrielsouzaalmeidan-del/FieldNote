@@ -1,0 +1,18 @@
+{
+  "appId": "br.com.wildlog.app",
+  "appName": "WildLog",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "Geolocation": {
+      "permissions": [
+        "location"
+      ]
+    },
+    "Filesystem": {
+      "iosScheme": "capacitor"
+    }
+  }
+}
