@@ -1,6 +1,9 @@
 # Claude Code — configurações locais (contém caminhos do sistema)
 .claude/settings.local.json
 
+# Notion — credenciais locais (nunca commitar)
+scripts/.env.local
+
 # Dependências e build
 node_modules/
 android/

@@ -19,5 +19,19 @@
       }
     }
   },
-  "theme": "dark"
+  "theme": "dark",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -ExecutionPolicy Bypass -File scripts/update-notion.ps1",
+            "shell": "powershell",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
 }
