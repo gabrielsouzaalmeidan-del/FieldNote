@@ -324,6 +324,37 @@ Para gerar novo APK: fazer push na branch `main` ou disparar manualmente em **Ac
 
 ---
 
+## Setup em novo computador
+
+Após clonar o repositório, execute **uma vez**:
+
+```powershell
+.\setup.ps1
+```
+
+Esse script:
+- Copia todas as skills e commands para `~/.claude/` (disponíveis globalmente)
+- Habilita os plugins no `~/.claude/settings.json`
+- Cria o `settings.local.json` com o hook de auto-push do `index.html` ajustado para o caminho desta máquina
+
+> **Sem rodar o setup:** as skills e commands ainda carregam automaticamente ao abrir o Claude Code dentro do diretório do projeto (project-scope). O setup só é necessário para acesso global e para o hook de auto-push.
+
+---
+
+## Skills e plugins disponíveis
+
+| Categoria | Skills/Plugins |
+|-----------|---------------|
+| Desenvolvimento de features | `feature-dev`, `make-plan`, `do`, `gsd:*` |
+| Revisão de código | `pr-review-toolkit`, `code-review`, `gsd:code-review` |
+| Segurança | `security-guidance` (hook automático), `security-review` |
+| Design / UI | `design`, `ui-styling`, `ui-ux-pro-max`, `playground`, `banner-design` |
+| Git / CI | `commit-commands`, `babysit`, `version-bump` |
+| Refatoração | `code-modernization`, `smart-explore`, `learn-codebase` |
+| Configuração | `claude-code-setup`, `hookify`, `skill-creator`, `update-config` |
+
+---
+
 ## Testes
 
 ```bash
