@@ -1,0 +1,7 @@
+# Claude Code — configurações locais (contém caminhos do sistema)
+.claude/settings.local.json
+
+# Dependências e build
+node_modules/
+android/
+package-lock.json
