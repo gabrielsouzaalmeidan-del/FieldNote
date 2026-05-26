@@ -18,6 +18,13 @@ Funciona **100% offline** — sem backend, sem login, sem internet.
 3. Role até **Artifacts** → baixe **FieldNote-APK**
 4. Extraia o ZIP e instale o `.apk`
 
+### Versão web (navegador)
+
+Acesse sem instalar em qualquer dispositivo:
+```
+https://gabrielsouzaalmeidan-del.github.io/FieldNote/
+```
+
 ---
 
 ## Instalar no Android
