@@ -199,10 +199,13 @@ jobs:
 
       - name: Criar Release
         run: |
-          NOTES=$(printf '## FieldNote — APK Android\nBuild: #%s\nComo instalar: baixe o .apk e instale (desinstale a versão anterior se necessário).' "${{ github.run_number }}")
-          gh release create "build-${{ github.run_number }}" \
-            android/app/build/outputs/apk/debug/FieldNote.apk \
-            --title "FieldNote — Build ${{ github.run_number }}" \
-            --notes "$NOTES"
+          APK="android/app/build/outputs/apk/debug/FieldNote.apk"
+          ls -lh "$APK" || { echo "::error::APK nao encontrado: $APK"; exit 1; }
+          GH_OUT=$(gh release create "build-${{ github.run_number }}" "$APK" \
+            --repo "${{ github.repository }}" \
+            --title "FieldNote Build ${{ github.run_number }}" \
+            --notes "FieldNote APK Android - Build ${{ github.run_number }}" 2>&1) \
+            || { echo "::error::gh release create falhou: $GH_OUT"; exit 1; }
+          echo "Release criado: $GH_OUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
