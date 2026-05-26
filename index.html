@@ -853,7 +853,13 @@ body.dark-mode .nav-btn {
   transition: color 0.15s, background 0.15s;
   border-radius: var(--radius-sm);
 }
-body.dark-mode .nav-btn.active { color: var(--verde-medio); background: var(--verde-suave); border-radius: 8px; }
+body.dark-mode .nav-btn.active {
+  color: var(--verde-medio);
+  background: transparent;
+}
+body.dark-mode .nav-btn.active::after {
+  background: #4ade80;
+}
 .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.01em; }
 
 body.dark-mode input,
