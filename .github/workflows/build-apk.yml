@@ -195,21 +195,12 @@ jobs:
           retention-days: 30
 
       - name: Criar Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: "FieldNote — Build ${{ github.run_number }}"
-          body: |
-            ## 📱 FieldNote — APK Android
-            **Correções:**
-            - ✅ Ícone personalizado (XMLs adaptativos removidos)
-            - ✅ GPS com permissões nativas
-            - ✅ Nome FieldNote
-            **Como instalar:**
-            1. Desinstale a versão anterior
-            2. Baixe o `.apk` e instale
-            **Build:** #${{ github.run_number }}
-          files: android/app/build/outputs/apk/debug/FieldNote.apk
-          draft: false
+        run: |
+          gh release create "build-${{ github.run_number }}" \
+            android/app/build/outputs/apk/debug/FieldNote.apk \
+            --title "FieldNote — Build ${{ github.run_number }}" \
+            --notes "## FieldNote — APK Android
+          Build: #${{ github.run_number }}
+          Como instalar: baixe o .apk e instale (desinstale a versão anterior se necessário)."
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
