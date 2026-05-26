@@ -196,11 +196,10 @@ jobs:
 
       - name: Criar Release
         run: |
+          NOTES=$(printf '## FieldNote — APK Android\nBuild: #%s\nComo instalar: baixe o .apk e instale (desinstale a versão anterior se necessário).' "${{ github.run_number }}")
           gh release create "build-${{ github.run_number }}" \
             android/app/build/outputs/apk/debug/FieldNote.apk \
             --title "FieldNote — Build ${{ github.run_number }}" \
-            --notes "## FieldNote — APK Android
-          Build: #${{ github.run_number }}
-          Como instalar: baixe o .apk e instale (desinstale a versão anterior se necessário)."
+            --notes "$NOTES"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
