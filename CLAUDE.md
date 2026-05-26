@@ -9,7 +9,7 @@ Guia completo do projeto para o Claude Code. Leia este arquivo antes de qualquer
 App Android de coleta de dados de fauna silvestre em campo, desenvolvido para biólogos e consultores ambientais brasileiros. Funciona **100% offline** (IndexedDB + SheetJS embutido), sem backend, sem login.
 
 - **Plataforma:** Android (Capacitor 6 + HTML/CSS/JS single-file)
-- **Repositório:** `github.com/gabrielsouzaalmeidan-del/fauna-campo`
+- **Repositório:** `github.com/gabrielsouzaalmeidan-del/FieldNote`
 - **Build:** GitHub Actions (`.github/workflows/build-apk.yml`)
 - **Arquivo principal:** `index.html` (~9.500 linhas)
 - **Versão atual:** v2.1
@@ -19,7 +19,7 @@ App Android de coleta de dados de fauna silvestre em campo, desenvolvido para bi
 ## Arquitetura
 
 ```
-fauna-campo/
+FieldNote/
 ├── index.html              ← ÚNICO ARQUIVO DO APP (tudo inline)
 ├── CLAUDE.md               ← Este arquivo
 ├── .github/
