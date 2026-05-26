@@ -26,8 +26,12 @@ if (-not $runs) {
     exit 1
 }
 
-$target = $runs.workflow_runs | Where-Object { $_.name -eq $workflow } |
-    & { if ($RunNumber) { process { if ($_.run_number -eq $RunNumber) { $_ } } } else { Select-Object -First 1 } }
+$filtered = $runs.workflow_runs | Where-Object { $_.name -eq $workflow }
+$target = if ($RunNumber) {
+    $filtered | Where-Object { $_.run_number -eq $RunNumber } | Select-Object -First 1
+} else {
+    $filtered | Select-Object -First 1
+}
 
 if (-not $target) { Write-Host "Run nao encontrado." -ForegroundColor Red; exit 1 }
 
