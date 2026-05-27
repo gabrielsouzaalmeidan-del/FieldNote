@@ -368,3 +368,36 @@ python3 tests/test_fieldnote.py
 ## Contato
 
 Desenvolvido por **Gabriel Almeida** — biólogo e consultor ambiental, Ceará/BR.
+
+
+---
+
+## Brain Central (claude-brain)
+
+Este projeto está vinculado ao repositório de conhecimento central:
+**`gabrielsouzaalmeidan-del/claude-brain`**
+
+### Regra de Ação
+
+**Antes de qualquer tarefa**, consulte o brain:
+
+```
+/wiki-brain query "contexto da sua tarefa aqui"
+/recall
+```
+
+### Skills Disponíveis (via claude-brain)
+
+Prioridade de uso:
+1. `/wiki-brain` — consultar memória antes de agir
+2. `/recall` — ver últimas 5 atividades
+3. `feature-dev`, `make-plan`, `do` — desenvolvimento
+4. `commit-commands` — commits e push
+5. `code-review` — revisão antes de push
+
+### Setup do Brain em novo computador
+
+```powershell
+git clone https://github.com/gabrielsouzaalmeidan-del/claude-brain.git
+Copy-Item -Recurse claude-brain\skills\wiki-brain $env:USERPROFILE\.claude\skills\wiki-brain
+```
