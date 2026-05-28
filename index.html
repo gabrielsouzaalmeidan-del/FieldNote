@@ -4644,7 +4644,10 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
         <label>Sexo</label>
         <select id="qc-sexo">
           <option value="">—</option>
-          <option>M</option><option>F</option><option>I</option><option>Casal</option>
+          <option value="Macho">Macho</option>
+          <option value="Fêmea">Fêmea</option>
+          <option value="Casal">Casal</option>
+          <option value="Indeterminado">Indeterminado</option>
         </select>
       </div>
     </div>
@@ -7181,7 +7184,7 @@ function nomeArquivo() {
   return `FAUNA_${new Date().toISOString().slice(0,10)}.xlsx`;
 }
 
-function baixarXLSX() {
+async function baixarXLSX() {
   if (registros.length === 0 && (!window.bioRegistros || bioRegistros.length === 0)) {
     mostrarAlert('export-alert','error','Nenhum registro para exportar.');
     return;
@@ -7191,68 +7194,58 @@ function baixarXLSX() {
     return;
   }
   try {
-    const wb = gerarXLSX();
+    const wb   = gerarXLSX();
     if (!wb) { mostrarAlert('export-alert','error','Erro ao gerar planilha.'); return; }
     const nome = nomeArquivo();
     const b64  = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
 
-    // ── Capacitor (APK Android): usar Filesystem plugin diretamente ──
-    const CapFS = window.Capacitor &&
-                  window.Capacitor.Plugins &&
-                  window.Capacitor.Plugins.Filesystem;
+    // ── Capacitor / APK Android ──────────────────────────────────────────
+    const Cap      = window.Capacitor;
+    const CapFS    = Cap && Cap.Plugins && Cap.Plugins.Filesystem;
+    const CapShare = Cap && Cap.Plugins && Cap.Plugins.Share;
+
     if (CapFS) {
-      CapFS.writeFile({
-        path: nome,
-        data: b64,
-        directory: 'DOCUMENTS',  // Directory.Documents
-        recursive: true
-      }).then(() => {
-        mostrarAlert('export-alert','success','✓ Salvo em Documentos: ' + nome);
-        toast('📥 ' + nome + ' salvo!');
-      }).catch(err => {
-        console.error('Filesystem DOCUMENTS falhou, tentando DOWNLOADS:', err);
-        // Tentar pasta Downloads
-        CapFS.writeFile({
-          path: nome,
-          data: b64,
-          directory: 'DOWNLOADS',
-          recursive: true
-        }).then(() => {
-          mostrarAlert('export-alert','success','✓ Salvo em Downloads: ' + nome);
-          toast('📥 ' + nome + ' salvo!');
-        }).catch(err2 => {
-          console.error('Filesystem DOWNLOADS falhou, tentando Cache:', err2);
-          // Último recurso: cache + compartilhar
-          CapFS.writeFile({
-            path: nome,
-            data: b64,
-            directory: 'CACHE',
-            recursive: true
-          }).then(result => {
-            // Compartilhar o arquivo salvo no cache
-            const CapShare = window.Capacitor.Plugins.Share;
-            if (CapShare && result.uri) {
-              CapShare.share({
-                title: 'FieldNote — ' + nome,
-                url: result.uri,
-                dialogTitle: 'Salvar planilha'
-              });
-            } else {
-              compartilharXLSX();
+      // Solicitar permissão de armazenamento (necessário no Android 9 e anteriores)
+      try { await CapFS.requestPermissions(); } catch (_) { /* plugin pode não expor requestPermissions — ignorar */ }
+
+      // Tentar diretórios em ordem de preferência para o usuário
+      for (const dir of ['DOWNLOADS', 'DOCUMENTS', 'CACHE']) {
+        try {
+          const result = await CapFS.writeFile({ path: nome, data: b64, directory: dir, recursive: true });
+
+          if (dir === 'CACHE') {
+            // CACHE é pasta privada do app — precisa de URI compartilhável para o usuário acessar
+            let uri = result && result.uri;
+            if (!uri) {
+              try { const r = await CapFS.getUri({ path: nome, directory: 'CACHE' }); uri = r && r.uri; } catch (_) {}
             }
-          }).catch(() => compartilharXLSX());
-        });
-      });
+            if (CapShare && uri) {
+              await CapShare.share({ title: 'FieldNote — ' + nome, url: uri, dialogTitle: 'Salvar planilha como…' });
+              mostrarAlert('export-alert','success','✓ Arquivo pronto para salvar: ' + nome);
+            } else {
+              await _compartilharBlob(wb, nome);
+            }
+          } else {
+            const label = dir === 'DOWNLOADS' ? 'Downloads' : 'Documentos';
+            mostrarAlert('export-alert','success','✓ Salvo em ' + label + ': ' + nome);
+            toast('📥 ' + nome + ' salvo!');
+          }
+          return;
+        } catch (err) {
+          console.warn('Filesystem ' + dir + ' falhou:', err);
+        }
+      }
+
+      // Todos os diretórios falharam — usar Share API com blob
+      await _compartilharBlob(wb, nome);
       return;
     }
 
-    // ── Browser web: URL.createObjectURL ──
+    // ── Browser web: URL.createObjectURL ────────────────────────────────
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob  = new Blob([wbout], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a');
+    const blob  = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
     a.href = url; a.download = nome; a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -7263,6 +7256,32 @@ function baixarXLSX() {
   } catch(e) {
     console.error('baixarXLSX:', e);
     mostrarAlert('export-alert','error','Erro: ' + (e.message || String(e)));
+  }
+}
+
+// Compartilha via Web Share API com arquivo (fallback quando Filesystem falha)
+async function _compartilharBlob(wb, nome) {
+  try {
+    const wbout  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob   = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const arquivo = new File([blob], nome, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+      await navigator.share({ title: 'FieldNote — ' + nome, files: [arquivo], dialogTitle: 'Salvar planilha como…' });
+      mostrarAlert('export-alert','success','✓ Arquivo pronto para salvar!');
+    } else {
+      // Último recurso: data URI (funciona em browsers, limitado em WebView)
+      const b64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+      const a   = document.createElement('a');
+      a.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + b64;
+      a.download = nome; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => a.remove(), 1000);
+      mostrarAlert('export-alert','success','✓ Baixando: ' + nome);
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      mostrarAlert('export-alert','error','Não foi possível salvar: ' + (e.message || String(e)));
+    }
   }
 }
 
@@ -7300,15 +7319,15 @@ async function compartilharXLSX() {
       return;
     }
 
-    // Fallback: baixarXLSX (data: URI + DownloadListener do Android)
-    baixarXLSX();
+    // Fallback: Share via blob helper
+    await _compartilharBlob(wb, nome);
 
   } catch(e) {
     if (e.name === 'AbortError') {
       mostrarAlert('export-alert','info','Compartilhamento cancelado.');
     } else {
       console.error('compartilharXLSX:', e);
-      baixarXLSX();
+      mostrarAlert('export-alert','error','Erro ao compartilhar: ' + (e.message || String(e)));
     }
   }
 }
