@@ -739,14 +739,16 @@ body.dark-mode .sp-nome-popular { color: #4ade80; }
 }
 .qc-extras-checks { display: flex; gap: 6px; flex-wrap: wrap; }
 .qc-extra-check {
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; gap: 4px;
   background: var(--verde-suave); border: 1.5px solid var(--verde-borda);
   border-radius: var(--radius-sm); padding: 5px 10px;
   font-size: 12px; font-weight: 600; cursor: pointer;
-  user-select: none; transition: all 0.12s;
+  user-select: none; transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-.qc-extra-check:has(input:checked) { background: #fff3e0; border-color: #e65100; color: #e65100; }
-.qc-extra-check input[type=checkbox] { width: 14px; height: 14px; accent-color: #e65100; cursor: pointer; }
+.qc-extra-check input[type=checkbox] { display: none; }
+.qc-extra-check::before { content: '+'; font-size: 14px; font-weight: 800; opacity: 0.45; line-height: 1; }
+.qc-extra-check:has(input:checked) { background: #e65100; border-color: #e65100; color: #fff; }
+.qc-extra-check:has(input:checked)::before { content: '✓'; opacity: 1; }
 
 /* ── EDIÇÃO DE REGISTROS ───────────────────────────────── */
 .record-actions {
