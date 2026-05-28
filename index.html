@@ -722,6 +722,31 @@ body.dark-mode .sp-nome-popular { color: #4ade80; }
   transition: all 0.12s;
 }
 .quick-gtab.active { background: #e65100; color: #fff; border-color: #e65100; }
+.qc-grupo-tag {
+  display: inline-block; margin-top: 4px;
+  background: #e65100; color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 99px; letter-spacing: 0.04em;
+}
+.qc-gps-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.qc-extras-section {
+  margin: 14px 0 8px; border-top: 1px solid var(--verde-borda); padding-top: 12px;
+}
+.qc-extras-label {
+  font-size: 11px; font-weight: 700; color: var(--texto-muted);
+  margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.qc-extras-checks { display: flex; gap: 6px; flex-wrap: wrap; }
+.qc-extra-check {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--verde-suave); border: 1.5px solid var(--verde-borda);
+  border-radius: var(--radius-sm); padding: 5px 10px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  user-select: none; transition: all 0.12s;
+}
+.qc-extra-check:has(input:checked) { background: #fff3e0; border-color: #e65100; color: #e65100; }
+.qc-extra-check input[type=checkbox] { width: 14px; height: 14px; accent-color: #e65100; cursor: pointer; }
 
 /* ── EDIÇÃO DE REGISTROS ───────────────────────────────── */
 .record-actions {
@@ -4593,13 +4618,6 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
     <button class="quick-close-btn" onclick="fecharRapida()">✕</button>
   </div>
   <div class="quick-body">
-    <div class="quick-group-tabs">
-      <button class="quick-gtab active" onclick="qcSetGrupo('Avifauna',this)">🦜 Aves</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Mastofauna',this)">🐾 Mamíf.</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Herpetofauna',this)">🦎 Herp.</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Ictiofauna',this)">🐟 Peixes</button>
-      <button class="quick-gtab" onclick="qcSetGrupo('Quiropterofauna',this)">🦇 Quiro.</button>
-    </div>
 
     <div class="field-group">
       <label>Espécie *</label>
@@ -4612,9 +4630,14 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
           onblur="setTimeout(()=>acCloseBio('qc'),180)" onfocus="acOnInputBio('qc',this.value)"/>
         <div class="ac-dropdown" id="qc-ac-dropdown"></div>
       </div>
+      <span id="qc-grupo-tag" class="qc-grupo-tag" style="display:none"></span>
     </div>
 
     <div class="field-row">
+      <div class="field-group">
+        <label>Quantidade</label>
+        <input id="qc-qtd" type="number" min="1" value="1" placeholder="1"/>
+      </div>
       <div class="field-group">
         <label>Sexo</label>
         <select id="qc-sexo">
@@ -4622,38 +4645,70 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
           <option>M</option><option>F</option><option>I</option>
         </select>
       </div>
-      <div class="field-group">
+    </div>
+
+    <div class="qc-gps-row">
+      <button class="btn btn-secondary" data-gps="qc-coord"
+        onclick="captureGps('qc-coord','qc-coord-meta','qc-coord-detail')">
+        📡 Capturar Localização
+      </button>
+      <span id="qc-coord-meta" class="gps-meta"></span>
+      <input id="qc-coord" type="hidden"/>
+      <span id="qc-coord-detail" style="display:none"></span>
+    </div>
+
+    <div class="qc-extras-section">
+      <div class="qc-extras-label">Deseja acrescentar mais alguma informação?</div>
+      <div class="qc-extras-checks">
+        <label class="qc-extra-check">
+          <input type="checkbox" id="qc-opt-anilha" onchange="qcToggleExtra('anilha')"> Anilha / Marcação
+        </label>
+        <label class="qc-extra-check">
+          <input type="checkbox" id="qc-opt-medidas" onchange="qcToggleExtra('medidas')"> Medidas biométricas
+        </label>
+        <label class="qc-extra-check">
+          <input type="checkbox" id="qc-opt-foto" onchange="qcToggleExtra('foto')"> Foto
+        </label>
+        <label class="qc-extra-check">
+          <input type="checkbox" id="qc-opt-obs" onchange="qcToggleExtra('obs')"> Observações
+        </label>
+      </div>
+    </div>
+
+    <div id="qc-extra-anilha" style="display:none">
+      <div class="field-group" style="margin-top:10px">
         <label>Anilha / Marcação</label>
         <input id="qc-anilha" placeholder="Ex: A1234"/>
       </div>
     </div>
 
-    <div class="field-group">
-      <label>Coordenadas</label>
-      <input id="qc-coord" placeholder="-00.0000, -000.0000"/>
+    <div id="qc-extra-medidas" style="display:none">
+      <div id="qc-medidas-grid" class="field-row" style="margin-top:10px"></div>
     </div>
 
-    <div id="qc-medidas-grid" class="field-row"></div>
-
-    <div class="field-group">
-      <label>📷 Foto</label>
-      <input type="file" id="qc-foto-input" accept="image/*" capture="environment"
-        onchange="qcHandleFoto(event)" style="display:none"/>
-      <button class="btn btn-secondary" onclick="document.getElementById('qc-foto-input').click()">📷 Adicionar foto</button>
-      <div class="foto-preview-wrap" id="qc-foto-wrap">
-        <img class="foto-preview" id="qc-foto-preview" src="" alt="" onclick="abrirLightbox(this.src)"/>
-        <button class="foto-del-btn" onclick="qcRemoverFoto()">✕</button>
+    <div id="qc-extra-foto" style="display:none">
+      <div class="field-group" style="margin-top:10px">
+        <label>📷 Foto</label>
+        <input type="file" id="qc-foto-input" accept="image/*" capture="environment"
+          onchange="qcHandleFoto(event)" style="display:none"/>
+        <button class="btn btn-secondary" onclick="document.getElementById('qc-foto-input').click()">📷 Adicionar foto</button>
+        <div class="foto-preview-wrap" id="qc-foto-wrap">
+          <img class="foto-preview" id="qc-foto-preview" src="" alt="" onclick="abrirLightbox(this.src)"/>
+          <button class="foto-del-btn" onclick="qcRemoverFoto()">✕</button>
+        </div>
       </div>
     </div>
 
-    <div class="field-group">
-      <label>Observações</label>
-      <textarea id="qc-obs" rows="2" placeholder="Condição, comportamento..."></textarea>
+    <div id="qc-extra-obs" style="display:none">
+      <div class="field-group" style="margin-top:10px">
+        <label>Observações</label>
+        <textarea id="qc-obs" rows="2" placeholder="Condição, comportamento..."></textarea>
+      </div>
     </div>
 
     <div class="alert" id="qc-alert"></div>
 
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="salvarRapida()">⚡ Salvar Captura</button>
+    <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="salvarRapida()">⚡ Salvar Captura</button>
   </div>
 </div>
 
@@ -7398,6 +7453,7 @@ function acSelectBio(prefix, idx) {
   const g=document.getElementById(prefix+'-ac-ghost'), t=document.getElementById(prefix+'-ac-typed');
   if(g) g.textContent=''; if(t) t.textContent='';
   acCloseBio(prefix);
+  if (prefix === 'qc') qcAutoGrupo(s.cl, s.or);
   const fa=document.getElementById(prefix+'-familia'), or=document.getElementById(prefix+'-ordem');
   if(fa&&s.fa){ fa.value=s.fa; fa.classList.add('autofilled'); setTimeout(()=>fa.classList.remove('autofilled'),3000); }
   if(or&&s.or){ or.value=s.or; or.classList.add('autofilled'); setTimeout(()=>or.classList.remove('autofilled'),3000); }
@@ -8074,17 +8130,20 @@ const QC_MEDIDAS = {
   Quiropterofauna:[{id:'massa',label:'Massa',unit:'g'},{id:'antebraco',label:'Antebraço',unit:'mm'},{id:'orelha',label:'Orelha',unit:'mm'}]
 };
 
+function qcAutoGrupo(cl, or) {
+  const map = { Aves:'Avifauna', Reptilia:'Herpetofauna', Amphibia:'Herpetofauna',
+                Actinopterygii:'Ictiofauna', Chondrichthyes:'Ictiofauna', Mammalia:'Mastofauna' };
+  let g = map[cl] || qcGrupo;
+  if ((or||'').toLowerCase().includes('chiroptera')) g = 'Quiropterofauna';
+  qcGrupo = g;
+  const tag = document.getElementById('qc-grupo-tag');
+  if (tag) { tag.textContent = g; tag.style.display = 'inline-block'; }
+  if (document.getElementById('qc-opt-medidas')?.checked) qcRenderMedidas();
+}
+
 function abrirRapida() {
   document.getElementById('qc-overlay').classList.add('show');
   document.getElementById('qc-sheet').classList.add('show');
-  // herdar contexto do painel de biometria ativo
-  const cfg = BIO_FIELDS[qcGrupo];
-  const p = cfg ? cfg.p : null;
-  if (p) {
-    const coord = document.getElementById(p+'-coord');
-    if (coord && coord.value) document.getElementById('qc-coord').value = coord.value;
-  }
-  qcRenderMedidas();
   document.getElementById('qc-especie').focus();
 }
 
@@ -8093,16 +8152,17 @@ function fecharRapida() {
   document.getElementById('qc-sheet').classList.remove('show');
 }
 
-function qcSetGrupo(g, btn) {
-  qcGrupo = g;
-  document.querySelectorAll('.quick-gtab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  qcRenderMedidas();
+function qcToggleExtra(field) {
+  const el = document.getElementById('qc-extra-' + field);
+  const cb = document.getElementById('qc-opt-' + field);
+  if (el) el.style.display = cb.checked ? '' : 'none';
+  if (field === 'medidas' && cb.checked) qcRenderMedidas();
 }
 
 function qcRenderMedidas() {
+  const el = document.getElementById('qc-medidas-grid'); if (!el) return;
   const medidas = QC_MEDIDAS[qcGrupo] || [];
-  document.getElementById('qc-medidas-grid').innerHTML = medidas.map(m =>
+  el.innerHTML = medidas.map(m =>
     `<div class="measure-field field-group">
        <label>${m.label}</label>
        <input id="qc-m-${m.id}" type="number" step="0.1" placeholder="0.0"/>
@@ -8115,9 +8175,8 @@ function qcHandleFoto(e) {
   const file = e.target.files[0]; if (!file) return;
   comprimirFoto(file, b64 => {
     qcFotoB64 = b64;
-    const wrap = document.getElementById('qc-foto-wrap');
-    const prev = document.getElementById('qc-foto-preview');
-    prev.src = b64; wrap.classList.add('show');
+    document.getElementById('qc-foto-preview').src = b64;
+    document.getElementById('qc-foto-wrap').classList.add('show');
   });
 }
 function qcRemoverFoto() {
@@ -8131,10 +8190,14 @@ function salvarRapida() {
   const esp = document.getElementById('qc-especie').value.trim();
   if (!esp) { mostrarAlert('qc-alert','error','Informe a espécie.'); return; }
 
-  const cfg = BIO_FIELDS[qcGrupo];
   bioCounters[qcGrupo] = (bioCounters[qcGrupo]||0) + 1;
   const idNum = bioCounters[qcGrupo];
   const idStr = qcGrupo.slice(0,3).toUpperCase()+'-'+String(idNum).padStart(4,'0');
+
+  const optAnilha  = document.getElementById('qc-opt-anilha')?.checked;
+  const optMedidas = document.getElementById('qc-opt-medidas')?.checked;
+  const optFoto    = document.getElementById('qc-opt-foto')?.checked;
+  const optObs     = document.getElementById('qc-opt-obs')?.checked;
 
   const cond = getCondicoesAmbientais();
   const r = {
@@ -8144,22 +8207,23 @@ function salvarRapida() {
     campId:  window._campIdAtivo  || '',
     pontoId: window._pontoIdAtivo || '',
     especie: esp,
+    quantidade: parseInt(document.getElementById('qc-qtd')?.value)||1,
     sexo: document.getElementById('qc-sexo').value,
-    anilha: document.getElementById('qc-anilha').value,
+    anilha: optAnilha ? (document.getElementById('qc-anilha')?.value||'') : '',
     coord: document.getElementById('qc-coord').value,
-    obs: document.getElementById('qc-obs').value,
+    obs: optObs ? (document.getElementById('qc-obs')?.value||'') : '',
     data: new Date().toISOString().slice(0,10),
     hora: new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-    foto: qcFotoB64,
+    foto: optFoto ? qcFotoB64 : '',
     ...cond
   };
 
-  // medidas
-  (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
-    r[m.id] = (document.getElementById('qc-m-'+m.id)||{}).value || '';
-  });
+  if (optMedidas) {
+    (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
+      r[m.id] = (document.getElementById('qc-m-'+m.id)||{}).value || '';
+    });
+  }
 
-  // herdar família/ordem do autocomplete
   const match = (bioAcResults['qc']||[])[0];
   if (match && normalizeStr(match.sp) === normalizeStr(esp)) {
     r.familia = match.fa || ''; r.ordem = match.or || '';
@@ -8169,19 +8233,27 @@ function salvarRapida() {
   salvarBio();
   toast('⚡ '+idStr+' salvo');
 
-  // limpar campos variáveis
-  ['qc-especie','qc-anilha','qc-obs'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
-    const el = document.getElementById('qc-m-'+m.id); if(el) el.value='';
-  });
-  qcRemoverFoto();
+  // reset campos fixos
+  document.getElementById('qc-especie').value = '';
+  const qtdEl = document.getElementById('qc-qtd'); if(qtdEl) qtdEl.value='1';
+  document.getElementById('qc-sexo').value = '';
+  document.getElementById('qc-coord').value = '';
+  const coordMeta = document.getElementById('qc-coord-meta');
+  if(coordMeta) { coordMeta.textContent=''; coordMeta.className='gps-meta'; }
+  const gpsBtn = document.querySelector('[data-gps="qc-coord"]');
+  if(gpsBtn) { gpsBtn.classList.remove('ok','err','loading'); gpsBtn.textContent='📡 Capturar Localização'; }
+  const tag = document.getElementById('qc-grupo-tag');
+  if(tag) { tag.style.display='none'; tag.textContent=''; }
   document.getElementById('qc-ac-ghost').textContent = '';
   document.getElementById('qc-ac-typed').textContent = '';
-  atualizarIdDisplay(qcGrupo);
 
-  // Atualizar lista de registros se aba Registros estiver visível
+  // reset opcionais
+  if(optAnilha)  { const el=document.getElementById('qc-anilha'); if(el) el.value=''; }
+  if(optMedidas) { (QC_MEDIDAS[qcGrupo]||[]).forEach(m=>{const el=document.getElementById('qc-m-'+m.id);if(el)el.value='';}); }
+  if(optFoto)    qcRemoverFoto();
+  if(optObs)     { const el=document.getElementById('qc-obs'); if(el) el.value=''; }
+
+  atualizarIdDisplay(qcGrupo);
   renderBioRegistros(document.getElementById('bio-lista'));
   mostrarAlert('qc-alert','success','✓ ['+idStr+'] "'+esp+'" salvo! Próximo animal:');
   document.getElementById('qc-especie').focus();
