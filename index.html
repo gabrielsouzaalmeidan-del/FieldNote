@@ -4582,6 +4582,80 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
   </div>
 </div>
 
+<!-- CAPTURA RÁPIDA -->
+<span class="quick-fab-label">CAPTURA</span>
+<button class="quick-fab" onclick="abrirRapida()" title="Captura Rápida">⚡</button>
+<div id="qc-overlay" class="quick-modal-overlay" onclick="fecharRapida()"></div>
+<div id="qc-sheet" class="quick-sheet">
+  <div class="quick-sheet-handle"></div>
+  <div class="quick-sheet-header">
+    ⚡ Captura Rápida
+    <button class="quick-close-btn" onclick="fecharRapida()">✕</button>
+  </div>
+  <div class="quick-body">
+    <div class="quick-group-tabs">
+      <button class="quick-gtab active" onclick="qcSetGrupo('Avifauna',this)">🦜 Aves</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Mastofauna',this)">🐾 Mamíf.</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Herpetofauna',this)">🦎 Herp.</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Ictiofauna',this)">🐟 Peixes</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Quiropterofauna',this)">🦇 Quiro.</button>
+    </div>
+
+    <div class="field-group">
+      <label>Espécie *</label>
+      <div class="ac-wrapper">
+        <div class="ac-inline" id="qc-ac-inline" aria-hidden="true">
+          <span id="qc-ac-typed"></span><span id="qc-ac-ghost" style="opacity:.4"></span>
+        </div>
+        <input id="qc-especie" placeholder="Nome científico ou popular..." autocomplete="off" spellcheck="false"
+          oninput="acOnInputBio('qc',this.value)" onkeydown="acOnKeydownBio('qc',event)"
+          onblur="setTimeout(()=>acCloseBio('qc'),180)" onfocus="acOnInputBio('qc',this.value)"/>
+        <div class="ac-dropdown" id="qc-ac-dropdown"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label>Sexo</label>
+        <select id="qc-sexo">
+          <option value="">—</option>
+          <option>M</option><option>F</option><option>I</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Anilha / Marcação</label>
+        <input id="qc-anilha" placeholder="Ex: A1234"/>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Coordenadas</label>
+      <input id="qc-coord" placeholder="-00.0000, -000.0000"/>
+    </div>
+
+    <div id="qc-medidas-grid" class="field-row"></div>
+
+    <div class="field-group">
+      <label>📷 Foto</label>
+      <input type="file" id="qc-foto-input" accept="image/*" capture="environment"
+        onchange="qcHandleFoto(event)" style="display:none"/>
+      <button class="btn btn-secondary" onclick="document.getElementById('qc-foto-input').click()">📷 Adicionar foto</button>
+      <div class="foto-preview-wrap" id="qc-foto-wrap">
+        <img class="foto-preview" id="qc-foto-preview" src="" alt="" onclick="abrirLightbox(this.src)"/>
+        <button class="foto-del-btn" onclick="qcRemoverFoto()">✕</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Observações</label>
+      <textarea id="qc-obs" rows="2" placeholder="Condição, comportamento..."></textarea>
+    </div>
+
+    <div class="alert" id="qc-alert"></div>
+
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="salvarRapida()">⚡ Salvar Captura</button>
+  </div>
+</div>
 
 <!-- NAV -->
 <nav class="nav-bar">
