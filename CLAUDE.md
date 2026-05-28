@@ -279,6 +279,8 @@ undef = used_vars - def_vars  # deve ser vazio
 | FASE sempre vazia | Coluna no cabeçalho sem campo no form | Coluna removida (v2.1) |
 | Bio não exportada | Filtro usava `r._grupo` (inexistente, campo é `r._tipo`) | Corrigido para `r._tipo` |
 | Método não salvo | parseInt fallback `\|\| 0` | Corrigido para `\|\| 1` |
+| Captura Rápida sumia | HTML do overlay/sheet (`qc-overlay`, `qc-sheet`) ausente do body | Adicionado HTML completo após `#toast` + botão `abrirRapida()` no painel Bio |
+| `adicionarManual()` crash | `m-projeto`, `m-campanha`, `m-area`, `m-consultor` removidos do form mas JS ainda lia diretamente | Usar `campAtiva?.projeto`, `campAtiva?.nome`, `campAtiva?.area`, optional chaining em todos os campos |
 
 ---
 

@@ -3367,6 +3367,10 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
     style="padding:9px 12px;background:var(--branco);border:1.5px solid var(--verde-borda);border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;color:var(--verde-medio)">
     🔅 Tela livre
   </button>
+  <button onclick="abrirRapida()"
+    style="padding:9px 14px;background:#e65100;color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer">
+    ⚡ Captura Rápida
+  </button>
   <div id="session-timer" style="display:none;width:100%;text-align:center;font-size:11px;font-weight:700;color:var(--verde-medio);background:var(--verde-suave);padding:5px;border-radius:var(--radius-sm)"></div>
 </div>
 
@@ -4622,6 +4626,73 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 </div>
 
 <div id="toast"></div>
+
+<!-- ══ CAPTURA RÁPIDA — Overlay + Bottom Sheet ══ -->
+<div class="quick-modal-overlay" id="qc-overlay" onclick="fecharRapida()"></div>
+<div class="quick-sheet" id="qc-sheet">
+  <div class="quick-sheet-handle"></div>
+  <div class="quick-sheet-header">
+    <span>⚡ Captura Rápida</span>
+    <button class="quick-close-btn" onclick="fecharRapida()">✕</button>
+  </div>
+  <div style="padding:10px 14px 0">
+    <div class="quick-group-tabs">
+      <button class="quick-gtab active" onclick="qcSetGrupo('Avifauna',this)">🐦 Aves</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Mastofauna',this)">🐾 Masto</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Herpetofauna',this)">🦎 Herp</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Ictiofauna',this)">🐟 Icti</button>
+      <button class="quick-gtab" onclick="qcSetGrupo('Quiropterofauna',this)">🦇 Quir</button>
+    </div>
+    <div class="field-group">
+      <label>Espécie</label>
+      <div class="ac-inline" id="qc-ac-inline" aria-hidden="true"><span id="qc-ac-typed"></span><span id="qc-ac-ghost" style="opacity:.4"></span></div>
+      <input id="qc-especie" type="text" autocomplete="off" spellcheck="false"
+        placeholder="Nome científico ou popular..."
+        oninput="acOnInputBio('qc',this.value)"
+        onkeydown="acOnKeydownBio('qc',event)"
+        onblur="setTimeout(()=>acCloseBio('qc'),180)"
+        onfocus="acOnInputBio('qc',this.value)"/>
+      <div class="ac-dropdown" id="qc-ac-dropdown"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field-group">
+        <label>Sexo</label>
+        <select id="qc-sexo">
+          <option value="">—</option>
+          <option>Macho</option><option>Fêmea</option><option>Indeterminado</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Anilha / ID</label>
+        <input id="qc-anilha" type="text" placeholder="Ex: A-1234"/>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Coordenadas</label>
+      <input id="qc-coord" type="text" placeholder="UTM ou decimal..."/>
+    </div>
+    <div id="qc-medidas-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0"></div>
+    <div class="field-group">
+      <label>Observações</label>
+      <textarea id="qc-obs" rows="2" placeholder="Observações..."></textarea>
+    </div>
+    <div class="field-group">
+      <label>📷 Foto (opcional)</label>
+      <div class="foto-preview-wrap" id="qc-foto-wrap">
+        <img class="foto-preview" id="qc-foto-preview" src="" onclick="abrirLightbox(this.src)"/>
+        <button class="foto-del-btn" onclick="qcRemoverFoto()">✕</button>
+      </div>
+      <div class="foto-zone" onclick="document.getElementById('qc-foto-input').click()">
+        <div class="foto-zone-icon">📷</div>
+        <div class="foto-zone-txt">Tirar foto ou galeria</div>
+        <input type="file" id="qc-foto-input" accept="image/*" capture="environment"
+          style="display:none" onchange="qcHandleFoto(event)"/>
+      </div>
+    </div>
+    <div class="alert" id="qc-alert"></div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="salvarRapida()">⚡ Salvar captura</button>
+  </div>
+</div>
 
 <script>
 // ── BASE DE DADOS DE ESPÉCIES ──────────────────────────
@@ -6804,34 +6875,34 @@ function adicionarManual() {
     _ts: new Date().toISOString(),
     _src: 'manual',
     _record_type: 'observacao',
-    projeto: document.getElementById('m-projeto').value,
-    campanha: document.getElementById('m-campanha').value,
-    area: document.getElementById('m-area').value,
-    ponto: document.getElementById('m-ponto').value,
-    coord: document.getElementById('m-coord') ? document.getElementById('m-coord').value : '',
+    projeto:  campAtiva?.projeto  || (document.getElementById('m-projeto')  || {}).value || '',
+    campanha: campAtiva?.nome     || (document.getElementById('m-campanha') || {}).value || '',
+    area:     campAtiva?.area     || (document.getElementById('m-area')     || {}).value || '',
+    ponto:    pontoAtivo?.nome    || (document.getElementById('m-ponto')    || {}).value || '',
+    coord: (document.getElementById('m-coord') || {}).value || '',
     ...getCondicoesAmbientais(),
-    foto: document.getElementById('m-foto-b64') ? document.getElementById('m-foto-b64').value : '',
+    foto: (document.getElementById('m-foto-b64') || {}).value || '',
     campId:  window._campIdAtivo  || '',
     pontoId: window._pontoIdAtivo || '',
     _iucn: acCurrentMatch ? (acCurrentMatch._iucn || acCurrentMatch.iu || '') : '',
     _mma:  acCurrentMatch ? (acCurrentMatch._mma  || acCurrentMatch.mm || '') : '',
     notavel: false,
-    data: document.getElementById('m-data').value,
-    horario: document.getElementById('m-horario').value,
-    periodo: document.getElementById('m-periodo').value,
-    estacao: document.getElementById('m-estacao').value,
-    metodo: document.getElementById('m-metodo').value,
-    tipo_registro: document.getElementById('m-tipo').value,
+    data: (document.getElementById('m-data') || {}).value || '',
+    horario: (document.getElementById('m-horario') || {}).value || '',
+    periodo: (document.getElementById('m-periodo') || {}).value || '',
+    estacao: (document.getElementById('m-estacao') || {}).value || '',
+    metodo: (document.getElementById('m-metodo') || {}).value || '',
+    tipo_registro: (document.getElementById('m-tipo') || {}).value || '',
     destinacao:   (document.getElementById('m-destinacao')   || {}).value || '',
     microhabitat: (document.getElementById('m-microhabitat') || {}).value || '',
-    classe: document.getElementById('m-classe').value,
-    ordem: document.getElementById('m-ordem').value,
-    familia: document.getElementById('m-familia').value,
+    classe: (document.getElementById('m-classe') || {}).value || '',
+    ordem:  (document.getElementById('m-ordem')  || {}).value || '',
+    familia:(document.getElementById('m-familia') || {}).value || '',
     especie,
-    n_individuos: parseInt(document.getElementById('m-n').value) || 1,
-    sexo: document.getElementById('m-sexo').value,
-    consultor: document.getElementById('m-consultor').value,
-    obs: document.getElementById('m-obs').value
+    n_individuos: parseInt((document.getElementById('m-n') || {}).value) || 1,
+    sexo: (document.getElementById('m-sexo') || {}).value || '',
+    consultor: (document.getElementById('m-consultor') || {}).value || campAtiva?.consultor || perfilUsuario?.nome || '',
+    obs: (document.getElementById('m-obs') || {}).value || ''
   };
   if (window._campEstacao && !r.estacao) r.estacao = window._campEstacao;
   if (window._campArea    && !r.area)    r.area    = window._campArea;
