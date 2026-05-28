@@ -8129,63 +8129,105 @@ function qcRemoverFoto() {
   document.getElementById('qc-foto-input').value = '';
 }
 
+// Mapa grupo QC → classe taxonômica para registros comuns
+const QC_TIPO_CLASSE = {
+  Avifauna:'Aves', Mastofauna:'Mammalia', Herpetofauna:'Reptilia',
+  Ictiofauna:'Pisces', Quiropterofauna:'Mammalia'
+};
+
 function salvarRapida() {
   const esp = document.getElementById('qc-especie').value.trim();
   if (!esp) { mostrarAlert('qc-alert','error','Informe a espécie.'); return; }
 
-  const cfg = BIO_FIELDS[qcGrupo];
-  bioCounters[qcGrupo] = (bioCounters[qcGrupo]||0) + 1;
-  const idNum = bioCounters[qcGrupo];
-  const idStr = qcGrupo.slice(0,3).toUpperCase()+'-'+String(idNum).padStart(4,'0');
+  // Coletar medidas e verificar se há valores reais preenchidos
+  const medidasVals = {};
+  (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
+    medidasVals[m.id] = (document.getElementById('qc-m-'+m.id)||{}).value || '';
+  });
+  const hasMedidas = Object.values(medidasVals).some(v => v !== '');
+
+  // Dados do autocomplete
+  const match = (bioAcResults['qc']||[])[0];
+  const matchOk = match && normalizeStr(match.sp) === normalizeStr(esp);
+  const classeInferida = matchOk ? (match.cl || QC_TIPO_CLASSE[qcGrupo] || '') : (QC_TIPO_CLASSE[qcGrupo] || '');
 
   const cond = getCondicoesAmbientais();
-  const r = {
+  const base = {
     _id: gerarUUID(), _ts: new Date().toISOString(),
-    _src: 'captura_rapida', _record_type: 'captura',
-    _tipo: qcGrupo, _id_num: idNum, _id_str: idStr, _rapida: true,
+    _src: 'captura_rapida',
+    _tipo: qcGrupo,
     campId:  window._campIdAtivo  || '',
     pontoId: window._pontoIdAtivo || '',
     especie: esp,
-    sexo: document.getElementById('qc-sexo').value,
-    anilha: document.getElementById('qc-anilha').value,
-    coord: document.getElementById('qc-coord').value,
-    obs: document.getElementById('qc-obs').value,
+    sexo: (document.getElementById('qc-sexo')||{}).value || '',
+    coord: (document.getElementById('qc-coord')||{}).value || '',
+    obs:   (document.getElementById('qc-obs')  ||{}).value || '',
     data: new Date().toISOString().slice(0,10),
     hora: new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
     foto: qcFotoB64,
+    classe:  classeInferida,
+    familia: matchOk ? (match.fa || '') : '',
+    ordem:   matchOk ? (match.or || '') : '',
     ...cond
   };
 
-  // medidas
-  (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
-    r[m.id] = (document.getElementById('qc-m-'+m.id)||{}).value || '';
-  });
-
-  // herdar família/ordem do autocomplete
-  const match = (bioAcResults['qc']||[])[0];
-  if (match && normalizeStr(match.sp) === normalizeStr(esp)) {
-    r.familia = match.fa || ''; r.ordem = match.or || '';
+  if (hasMedidas) {
+    // ── COM medições reais → biometria ────────────────────
+    bioCounters[qcGrupo] = (bioCounters[qcGrupo]||0) + 1;
+    const idNum = bioCounters[qcGrupo];
+    const idStr = qcGrupo.slice(0,3).toUpperCase()+'-'+String(idNum).padStart(4,'0');
+    const r = {
+      ...base,
+      _record_type: 'captura',
+      _id_num: idNum, _id_str: idStr, _rapida: true,
+      anilha: (document.getElementById('qc-anilha')||{}).value || '',
+      ...medidasVals
+    };
+    bioRegistros.push(normalizarRegistro(injetarPerfilNoRegistro(r)));
+    salvarBio();
+    atualizarIdDisplay(qcGrupo);
+    renderBioRegistros(document.getElementById('bio-lista'));
+    mostrarAlert('qc-alert','success','✓ ['+idStr+'] "'+esp+'" — biometria salva! Próximo:');
+    toast('📐 '+idStr+' salvo como biometria');
+  } else {
+    // ── SEM medições → observação comum ──────────────────
+    const anilha = (document.getElementById('qc-anilha')||{}).value || '';
+    const r = {
+      ...base,
+      _record_type: 'observacao',
+      projeto:  campAtiva?.projeto  || '',
+      campanha: campAtiva?.nome     || '',
+      area:     campAtiva?.area     || '',
+      ponto:    pontoAtivo?.nome    || '',
+      metodo:   (document.getElementById('m-metodo')||{}).value || '',
+      tipo_registro: '',
+      n_individuos: 1,
+      notavel: false,
+      consultor: campAtiva?.consultor || perfilUsuario?.nome || '',
+      obs: [base.obs, anilha ? 'Anilha: '+anilha : ''].filter(Boolean).join(' | ')
+    };
+    registros.push(normalizarRegistro(injetarPerfilNoRegistro(r)));
+    salvarDados().catch(e=>console.warn(e));
+    renderRegistrosFiltrado();
+    mostrarAlert('qc-alert','success','✓ "'+esp+'" — observação salva! Próximo:');
+    toast('⚡ Obs. salva');
   }
 
-  bioRegistros.push(normalizarRegistro(injetarPerfilNoRegistro(r)));
-  salvarBio();
-  toast('⚡ '+idStr+' salvo');
-
-  // limpar campos variáveis
+  // limpar campos
   ['qc-especie','qc-anilha','qc-obs'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   (QC_MEDIDAS[qcGrupo]||[]).forEach(m => {
     const el = document.getElementById('qc-m-'+m.id); if(el) el.value='';
   });
+  const coordEl = document.getElementById('qc-coord');
+  if (coordEl) coordEl.value = '';
+  const sexoEl = document.getElementById('qc-sexo');
+  if (sexoEl) sexoEl.value = '';
   qcRemoverFoto();
   document.getElementById('qc-ac-ghost').textContent = '';
   document.getElementById('qc-ac-typed').textContent = '';
-  atualizarIdDisplay(qcGrupo);
 
-  // Atualizar lista de registros se aba Registros estiver visível
-  renderBioRegistros(document.getElementById('bio-lista'));
-  mostrarAlert('qc-alert','success','✓ ['+idStr+'] "'+esp+'" salvo! Próximo animal:');
   document.getElementById('qc-especie').focus();
 }
 
