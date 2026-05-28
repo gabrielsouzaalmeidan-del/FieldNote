@@ -339,19 +339,18 @@ Esse script:
 
 > **Sem rodar o setup:** as skills e commands ainda carregam automaticamente ao abrir o Claude Code dentro do diretório do projeto (project-scope). O setup só é necessário para acesso global e para o hook de auto-push.
 
+
 ---
 
-## Skills e plugins disponíveis
+## Setup em novo computador
 
-| Categoria | Skills/Plugins |
-|-----------|---------------|
-| Desenvolvimento de features | `feature-dev`, `make-plan`, `do`, `gsd:*` |
-| Revisão de código | `pr-review-toolkit`, `code-review`, `gsd:code-review` |
-| Segurança | `security-guidance` (hook automático), `security-review` |
-| Design / UI | `design`, `ui-styling`, `ui-ux-pro-max`, `playground`, `banner-design` |
-| Git / CI | `commit-commands`, `babysit`, `version-bump` |
-| Refatoração | `code-modernization`, `smart-explore`, `learn-codebase` |
-| Configuração | `claude-code-setup`, `hookify`, `skill-creator`, `update-config` |
+Após clonar o repositório, execute **uma vez**:
+
+```powershell
+.\setup.ps1
+```
+
+Esse script configura o hook de auto-push do `index.html` para esta máquina.
 
 ---
 
@@ -368,36 +367,3 @@ python3 tests/test_fieldnote.py
 ## Contato
 
 Desenvolvido por **Gabriel Almeida** — biólogo e consultor ambiental, Ceará/BR.
-
-
----
-
-## Brain Central (claude-brain)
-
-Este projeto está vinculado ao repositório de conhecimento central:
-**`gabrielsouzaalmeidan-del/claude-brain`**
-
-### Regra de Ação
-
-**Antes de qualquer tarefa**, consulte o brain:
-
-```
-/wiki-brain query "contexto da sua tarefa aqui"
-/recall
-```
-
-### Skills Disponíveis (via claude-brain)
-
-Prioridade de uso:
-1. `/wiki-brain` — consultar memória antes de agir
-2. `/recall` — ver últimas 5 atividades
-3. `feature-dev`, `make-plan`, `do` — desenvolvimento
-4. `commit-commands` — commits e push
-5. `code-review` — revisão antes de push
-
-### Setup do Brain em novo computador
-
-```powershell
-git clone https://github.com/gabrielsouzaalmeidan-del/claude-brain.git
-Copy-Item -Recurse claude-brain\skills\wiki-brain $env:USERPROFILE\.claude\skills\wiki-brain
-```
