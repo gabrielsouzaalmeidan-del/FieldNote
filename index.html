@@ -6917,9 +6917,11 @@ function renderRegistrosFiltrado() {
     'Aves': 'aves', 'Mammalia': 'mammalia', 'Reptilia': 'reptilia',
     'Amphibia': 'amphibia', 'Pisces': 'pisces', 'default': 'default'
   };
+  // Mapa O(n) para evitar indexOf O(n²) dentro do map
+  const idxMap = new Map(registros.map((rec, i) => [rec, i]));
 
   lista.innerHTML = fonte.map((r) => {
-    const idx = registros.indexOf(r);
+    const idx = idxMap.has(r) ? idxMap.get(r) : registros.indexOf(r);
     const gIcon = grupoIcon[r.classe] || grupoIcon['default'];
     const gClass = grupoClass[r.classe] || grupoClass['default'];
     const dataFmt = r.data ? new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR') : '';
@@ -7228,7 +7230,12 @@ function salvarConfig() {
 function atualizarOnline() {
   const dot = document.getElementById('online-dot-circle');
   const label = document.getElementById('online-label');
-  if (dot) dot.style.background = isOnline ? '#4ade80' : '#fbbf24';
+  if (dot) {
+    dot.style.background  = isOnline ? '#4ade80' : '#fbbf24';
+    dot.style.boxShadow   = isOnline
+      ? '0 0 5px rgba(74,222,128,0.7)'
+      : '0 0 5px rgba(251,191,36,0.7)';
+  }
   if (label) label.textContent = isOnline ? 'online' : 'offline';
 }
 
@@ -7257,17 +7264,8 @@ function irPara(panel, btn) {
     setTimeout(() => renderMapa(), 50);
   }
   if (panel === 'dashboard') {
-    setTimeout(() => mudarDashTab('resumo'), 50);
-  }
-  if (panel === 'dashboard') {
-    // Garantir sub-aba Resumo ativa por padrão (a menos que registros seja solicitado)
-    setTimeout(() => {
-      const activeSub = document.querySelector('.dsub.active');
-      if (!activeSub || activeSub.id === 'dsub-resumo') {
-        mudarDashTab('resumo');
-      }
-      atualizarDtabBadge();
-    }, 60);
+    // Ativar sub-aba resumo após o painel estar visível (layout precisa do offsetHeight)
+    setTimeout(() => { mudarDashTab('resumo'); atualizarDtabBadge(); }, 50);
   }
   if (panel === 'enviar') {
     // Popular campos de config com valores salvos
@@ -7286,9 +7284,9 @@ function irPara(panel, btn) {
   if (panel === 'manual') {
     const mel = document.getElementById('m-metodo');
     if (mel) onMetodoChange(mel.value);
+    setTimeout(atualizarProgressManual, 50);
   }
   if (panel === 'registros') { renderRegistrosFiltrado(); renderBioRegistros(document.getElementById('bio-lista')); }
-  if (panel === 'dashboard') { renderDashboard(); }
   if (panel === 'enviar')    { renderReqConfig(); renderPerfil(); if (!perfilUsuario.nome) { document.getElementById('perfil-form').classList.add('show'); } }
   if (panel === 'projeto')    { renderCampanhas(); }
   if (panel === 'manual' || panel === 'biometria' || panel === 'mackinnon') { propagarConsultor(); }
@@ -7542,7 +7540,7 @@ function renderRegistros() {
         ${r.ponto ? `<span class="record-badge rb-ponto">📍 ${r.ponto}</span>` : ''}
         ${r.metodologia ? `<span class="record-badge rb-metodo">${r.metodologia}</span>` : ''}
         ${dataFmt ? `<span class="record-badge rb-data">${dataFmt}</span>` : ''}
-        ${r.horario ? `<span class="record-badge rb-data">⏱ ${r.horario}</span>` : ''}
+        ${(r.hora||r.horario) ? `<span class="record-badge rb-data">⏱ ${r.hora||r.horario}</span>` : ''}
         ${r.notavel ? `<span class="badge-notavel">⭐ notável</span>` : ''}
         ${r._iucn ? `<span class="badge-iucn iucn-${(r._iucn||'').toLowerCase()}">${r._iucn} IUCN</span>` : ''}
         ${r._mma ? `<span class="mma-badge">⚠️ ${r._mma} MMA</span>` : ''}
@@ -7562,8 +7560,6 @@ function renderRegistros() {
         ? `<div class="record-coord">📡 <span>${r.coord}</span></div>`
         : '<div class="record-meta-secondary" style="font-size:10px">📍 sem coordenadas</div>'
       }
-        </div>
-      </div>
       <div class="edit-panel" id="rec-edit-${idx}">
         <div style="font-size:11px;font-weight:700;color:var(--verde-medio);margin-bottom:8px">✏️ Editando registro <span class="editing-badge">EM EDIÇÃO</span></div>
         <div class="field-group"><label>Espécie</label><input data-f="especie"/></div>
@@ -12430,13 +12426,10 @@ function atualizarProgressManual() {
       else if (dot) dot.textContent = n;
     }
 
-    // Determine active step
+    // Próximo step não preenchido (0 = todos feitos)
     const steps = [s1done, s2done, s3done, s4done];
-    let active = 1;
-    for (let i = 0; i < steps.length; i++) {
-      if (!steps[i]) { active = i + 1; break; }
-      if (i === steps.length - 1) active = 4;
-    }
+    const firstEmpty = steps.findIndex(s => !s);
+    const active = firstEmpty === -1 ? 0 : firstEmpty + 1; // 0 = todos concluídos
 
     setStep(1, s1done, active === 1);
     setStep(2, s2done, active === 2);
@@ -12452,14 +12445,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (el) el.addEventListener('input', atualizarProgressManual);
     if (el) el.addEventListener('change', atualizarProgressManual);
   });
-  // Also update when navigating to manual panel
-  const origIrPara = window.irPara;
-  if (origIrPara) {
-    window.irPara = function(panel, btn) {
-      origIrPara(panel, btn);
-      if (panel === 'manual') setTimeout(atualizarProgressManual, 50);
-    };
-  }
 });
 
 </script>
