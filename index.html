@@ -47,6 +47,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
 <style>
 :root {
+  color-scheme: light;
   /* ── Field Pro palette ── */
   --verde-escuro: #15803d;
   --verde-medio: #16a34a;
@@ -78,6 +79,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+*:focus { outline: none; }
+*:focus-visible { outline: 2px solid var(--verde-medio); outline-offset: 2px; }
 
 body {
   font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
@@ -85,6 +88,11 @@ body {
   color: var(--texto);
   min-height: 100vh;
   padding-bottom: 80px;
+  overscroll-behavior: contain;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* HEADER */
@@ -164,9 +172,9 @@ body {
 /* NAV */
 
 /* PANELS */
-.panel { display: none; padding: 12px 14px; animation: fadeIn 0.15s ease; }
+.panel { display: none; padding: 12px 14px; animation: fadeIn 0.18s ease; }
 .panel.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* CARDS */
 .card {
@@ -176,6 +184,7 @@ body {
   box-shadow: var(--shadow-sm);
   padding: 14px;
   margin-bottom: 12px;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 .card-title {
   font-size: 13px; font-weight: 600;
@@ -217,6 +226,8 @@ textarea { resize: vertical; min-height: 60px; }
   border: none; cursor: pointer;
   transition: all 0.15s; text-align: center;
   margin-bottom: 8px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn:active { transform: scale(0.98); }
 .btn-primary { background: var(--gradient-primary); color: #fff; box-shadow: 0 2px 8px rgba(22,163,74,0.30); letter-spacing: 0.01em; }
@@ -229,6 +240,8 @@ textarea { resize: vertical; min-height: 60px; }
   padding: 8px 14px; font-size: 13px; font-weight: 600;
   border-radius: var(--radius-sm); border: none; cursor: pointer;
   transition: all 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-sm:active { transform: scale(0.97); }
 
@@ -264,9 +277,10 @@ textarea { resize: vertical; min-height: 60px; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.2s, transform 0.1s;
   box-shadow: var(--shadow-sm);
 }
+.record-item:active { transform: scale(0.99); box-shadow: none; }
 .record-item.grupo-aves      { border-left-color: #3b82f6; }
 .record-item.grupo-mammalia  { border-left-color: #f59e0b; }
 .record-item.grupo-reptilia  { border-left-color: #10b981; }
@@ -297,6 +311,9 @@ textarea { resize: vertical; min-height: 60px; }
   background: var(--verde-suave);
   transition: all 0.15s;
   margin-bottom: 10px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .camera-zone:active { background: var(--areia-escura); }
 .camera-zone .cam-icon { font-size: 40px; margin-bottom: 8px; }
@@ -318,6 +335,8 @@ textarea { resize: vertical; min-height: 60px; }
   transition: all 0.15s; font-size: 13px; font-weight: 600;
   color: var(--verde-medio);
   width: 100%; font-family: inherit; display: block;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .send-btn:active { background: var(--verde-suave); transform: scale(0.97); }
 .send-btn .send-icon { font-size: 24px; display: block; margin-bottom: 4px; }
@@ -674,6 +693,9 @@ body.dark-mode .sp-nome-popular { color: #4ade80; }
   font-size: 22px; box-shadow: 0 4px 16px rgba(230,81,0,.45);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: transform 0.15s;
+  will-change: transform;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .quick-fab:active { transform: scale(0.92); }
 .quick-fab-label {
@@ -693,8 +715,9 @@ body.dark-mode .sp-nome-popular { color: #4ade80; }
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 801;
   background: var(--fundo); border-radius: 18px 18px 0 0;
   max-height: 90vh; overflow-y: auto;
-  padding: 0 0 calc(env(safe-area-inset-bottom) + 16px);
+  padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
   transform: translateY(100%); transition: transform 0.28s cubic-bezier(.32,.72,0,1);
+  will-change: transform;
 }
 .quick-sheet.show { transform: translateY(0); }
 .quick-sheet-handle {
@@ -797,6 +820,7 @@ body.dark-mode .sp-nome-popular { color: #4ade80; }
 
 .filtro-chip.filtro-sep { border-left: 1.5px solid var(--borda); margin-left: 2px; }
 body.dark-mode {
+  color-scheme: dark;
   /* ── Nature Dark palette ── */
   --verde-escuro: #0d2b0d;
   --verde-medio: #4ade80;
@@ -820,7 +844,6 @@ body.dark-mode {
 }
 
 /* ── Nature Dark: componentes ── */
-body.dark-mode body { background: #0a1a0a; }
 body.dark-mode .header { background: #0d2b0d; border-bottom: 1px solid #2d5a2d; }
 body.dark-mode .header-top { border-bottom: none; }
 body.dark-mode .ctx-bar select,
@@ -847,7 +870,7 @@ body.dark-mode .card-title { color: #86efac !important; }
 body.dark-mode .section-header { color: #4ade80; }
 body.dark-mode .nav-btn.active {
   color: var(--verde-medio);
-  background: transparent;
+  background: rgba(74,222,128,0.08);
 }
 body.dark-mode .nav-btn.active::after {
   background: #4ade80;
@@ -982,16 +1005,6 @@ body.dark-mode .ponto-item { background: #1a2e1a; border-color: #2d5a2d; }
 
 
 
-.dark-toggle {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.25);
-  color: #fff; font-size: 16px;
-  cursor: pointer; padding: 5px 8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s; line-height: 1;
-  flex-shrink: 0;
-}
-.dark-toggle:active { background: rgba(255,255,255,0.3); }
 
 /* ── DASHBOARD ────────────────────────────────────────────── */
 .dash-grid {
@@ -1614,6 +1627,9 @@ input.req-missing, select.req-missing, textarea.req-missing {
 
 /* ── MELHORIAS VISUAIS GLOBAIS ─────────────────── */
 .section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   font-weight: 700;
   color: var(--texto-suave);
@@ -1652,7 +1668,8 @@ button[data-gps], button[onclick*="captureGps"] {
 
 /* Cards/painéis com sombra suave */
 .panel {
-  padding: 16px 16px 80px !important;
+  padding: 16px 16px calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  scroll-behavior: smooth;
 }
 
 /* Nav bar melhorada */
@@ -1682,7 +1699,7 @@ button[data-gps], button[onclick*="captureGps"] {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   z-index: 100;
-  padding: 4px 6px 8px;
+  padding: 4px 6px calc(8px + env(safe-area-inset-bottom, 0px));
   gap: 3px;
   box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
 }
@@ -1699,6 +1716,7 @@ button[data-gps], button[onclick*="captureGps"] {
   transition: color 0.15s, background 0.15s;
   border-radius: var(--radius-sm);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1706,7 +1724,7 @@ button[data-gps], button[onclick*="captureGps"] {
 }
 .nav-btn.active {
   color: var(--verde-medio);
-  background: transparent;
+  background: var(--verde-suave);
   position: relative;
 }
 .nav-btn.active::after {
@@ -1795,6 +1813,11 @@ button[data-gps], button[onclick*="captureGps"] {
   border-radius: 50%;
   background: var(--verde-medio);
   flex-shrink: 0;
+  animation: gpsDotPulse 2s ease-in-out infinite;
+}
+@keyframes gpsDotPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(74,222,128,0); }
 }
 .online-pill {
   display: flex;
@@ -1823,7 +1846,11 @@ button[data-gps], button[onclick*="captureGps"] {
   font-size: 16px;
   cursor: pointer;
   flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
 }
+.header-icon-btn:active { transform: scale(0.92); background: var(--verde-borda); }
 
 /* ═══════════════════════════════════════════════
    CTX-BAR — chips compactos
@@ -1998,11 +2025,16 @@ button[data-gps], button[onclick*="captureGps"] {
 .filtros-bar {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 8px 14px;
   background: var(--branco);
   border-bottom: 1px solid var(--verde-borda);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.filtros-bar::-webkit-scrollbar { display: none; }
 .filtro-chip {
   padding: 6px 13px;
   border-radius: 20px;
@@ -2013,8 +2045,10 @@ button[data-gps], button[onclick*="captureGps"] {
   color: var(--texto-suave);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .filtro-chip.ativo {
   background: var(--verde-medio);
