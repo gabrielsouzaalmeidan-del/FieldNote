@@ -2756,6 +2756,197 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 #panel-dashboard.active {
   display: flex !important;
 }
+
+/* ══════════════════════════════════════════════════════
+   MELHORIAS — baseadas em iNaturalist, eBird, Fulcrum
+══════════════════════════════════════════════════════ */
+
+/* 1. Sync badge por registro (Fulcrum / KoBoCollect style) */
+.rb-sync-local {
+  background: var(--sucesso-bg);
+  color: var(--sucesso);
+  border: 1px solid var(--verde-borda);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+body.dark-mode .rb-sync-local {
+  background: rgba(74,222,128,0.1);
+  color: #4ade80;
+  border-color: #2d5a2d;
+}
+
+/* 2. Filtro chip active — eBird style com scale + sombra */
+.filtro-chip.ativo {
+  background: var(--verde-medio);
+  color: #fff;
+  border-color: var(--verde-medio);
+  transform: scale(1.04);
+  box-shadow: 0 3px 10px rgba(22,163,74,0.30);
+}
+.filtro-chip:active {
+  transform: scale(0.96);
+}
+
+/* 3. FAB label — animação de atenção suave */
+.quick-fab-label {
+  animation: fabLabelShow 0.3s ease 2s both, fabLabelFade 0.4s ease 5s both;
+}
+@keyframes fabLabelShow {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fabLabelFade {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
+/* 4. Offline bar — neutro/positivo (offline-first como feature) */
+.offline-bar {
+  background: var(--areia-escura) !important;
+  border-bottom: 1px solid var(--borda) !important;
+  color: var(--texto-suave) !important;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 14px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+.offline-bar.show { display: flex !important; }
+body.dark-mode .offline-bar {
+  background: #0f1f0f !important;
+  border-color: #2d5a2d !important;
+  color: #86efac !important;
+}
+.offline-badge {
+  background: var(--verde-medio);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+body.dark-mode .offline-badge { background: #4ade80; color: #0d2b0d; }
+
+/* 5. Form progress steps — Survey123 style */
+.form-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: -2px -16px 14px -16px;
+  padding: 8px 16px;
+  background: var(--areia-escura);
+  border-bottom: 1px solid var(--borda);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.form-progress-bar::-webkit-scrollbar { display: none; }
+.form-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--texto-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.form-step.done { color: var(--verde-medio); }
+.form-step.active {
+  color: var(--texto);
+  font-weight: 700;
+}
+.form-step-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--borda);
+  border: 2px solid var(--borda);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--texto-muted);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.form-step.done .form-step-dot {
+  background: var(--verde-medio);
+  border-color: var(--verde-medio);
+  color: #fff;
+}
+.form-step.active .form-step-dot {
+  background: var(--verde-escuro);
+  border-color: var(--verde-escuro);
+  color: #fff;
+}
+.form-step-connector {
+  height: 2px;
+  width: 16px;
+  background: var(--borda);
+  flex-shrink: 0;
+  margin: 0 2px;
+  transition: background 0.2s;
+}
+.form-step-connector.done { background: var(--verde-medio); }
+body.dark-mode .form-progress-bar {
+  background: #0d2b0d;
+  border-color: #2d5a2d;
+}
+body.dark-mode .form-step-dot { background: #1a2e1a; border-color: #2d5a2d; color: #4ade80; }
+body.dark-mode .form-step.done .form-step-dot { background: #4ade80; border-color: #4ade80; color: #0d2b0d; }
+body.dark-mode .form-step.active .form-step-dot { background: #2d5a2d; border-color: #4ade80; color: #4ade80; }
+body.dark-mode .form-step-connector { background: #2d5a2d; }
+body.dark-mode .form-step-connector.done { background: #4ade80; }
+
+/* 6. Record meta melhorado — legibilidade hierárquica */
+.record-meta-primary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+.record-meta-secondary {
+  font-size: 11px;
+  color: var(--texto-muted);
+  line-height: 1.6;
+  margin-top: 1px;
+}
+.record-coord {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  color: var(--verde-medio);
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+body.dark-mode .record-meta-primary { color: #86efac; }
+body.dark-mode .record-meta-secondary { color: rgba(74,222,128,0.5); }
+body.dark-mode .record-coord { color: #4ade80; }
+
+/* 7. btn-gps melhorado — 44dp touch target (eBird field style) */
+.btn-gps {
+  width: 44px !important;
+  height: 44px !important;
+  font-size: 20px !important;
+}
+
+/* 8. Record-item active feedback melhorado */
+.record-item {
+  cursor: pointer;
+}
 </style>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2836,7 +3027,8 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 
   <!-- Barra offline -->
   <div class="offline-bar" id="offline-bar">
-    ☁️ <span id="offline-msg">Sem conexão — dados salvos localmente</span>
+    <span class="offline-badge" id="offline-badge">OFFLINE</span>
+    <span id="offline-msg">Dados salvos localmente</span>
   </div>
 </div>
 
@@ -3049,6 +3241,30 @@ body.dark-mode .dtab-badge { background: #4ade80; color: #0d2b0d; }
 <div class="panel" id="panel-manual">
   <div class="card">
     <div class="card-title">📝 Novo registro manual</div>
+
+    <!-- Progress Steps — Survey123 style -->
+    <div class="form-progress-bar" id="manual-progress-bar">
+      <div class="form-step active" id="fstep-1">
+        <div class="form-step-dot">1</div>
+        <span>Local</span>
+      </div>
+      <div class="form-step-connector" id="fconn-1"></div>
+      <div class="form-step" id="fstep-2">
+        <div class="form-step-dot">2</div>
+        <span>Método</span>
+      </div>
+      <div class="form-step-connector" id="fconn-2"></div>
+      <div class="form-step" id="fstep-3">
+        <div class="form-step-dot">3</div>
+        <span>Espécie</span>
+      </div>
+      <div class="form-step-connector" id="fconn-3"></div>
+      <div class="form-step" id="fstep-4">
+        <div class="form-step-dot">4</div>
+        <span>Biologia</span>
+      </div>
+    </div>
+
     <div class="ctx-banner" id="ctx-banner-manual">
       <div class="ctx-banner-row">
         <div>
@@ -7151,16 +7367,22 @@ function renderRegistros() {
         ${r.notavel ? `<span class="badge-notavel">⭐ notável</span>` : ''}
         ${r._iucn ? `<span class="badge-iucn iucn-${(r._iucn||'').toLowerCase()}">${r._iucn} IUCN</span>` : ''}
         ${r._mma ? `<span class="mma-badge">⚠️ ${r._mma} MMA</span>` : ''}
+        <span class="record-badge rb-sync-local">💾 salvo</span>
       </div>
-      <div class="record-meta" style="margin-top:4px">
-            ${r.classe || ''} · ${r.ordem || ''} · ${r.familia || ''}<br>
-            ${r.n_individuos || 0} ind.${r.sexo ? ' · ' + r.sexo : ''} · ${r.tipo_registro || ''} · ${r.metodo || ''}<br>
-            ${r.ponto || ''} · ${dataFmt} ${r.horario || ''} · ${r.periodo || ''} · ${r.estacao || ''}
-            ${r.metodo ? ' · ' + r.metodo : ''}${r.tipo_registro ? ' · ' + r.tipo_registro : ''}
-            ${r.destinacao ? '<br>📌 ' + r.destinacao : ''}${r.microhabitat ? ' · 🌿 ' + r.microhabitat : ''}
-            ${r.coord ? `<br>📡 ${r.coord}` : '<br><span style="color:var(--texto-muted);font-size:10px">📍 Coordenadas não registradas</span>'}
-            ${r.obs ? '<br><em>' + r.obs + '</em>' : ''}
-          </div>
+      <div class="record-meta-primary">
+        ${[r.classe, r.ordem, r.familia].filter(Boolean).join(' · ')}
+        ${r.n_individuos ? ` · ${r.n_individuos} ind.` : ''}${r.sexo ? ` · ${r.sexo}` : ''}
+      </div>
+      <div class="record-meta-secondary">
+        ${[r.tipo_registro, r.metodo].filter(Boolean).join(' · ')}
+        ${r.periodo ? ` · ${r.periodo}` : ''}${r.estacao ? ` · ${r.estacao}` : ''}
+        ${r.destinacao ? `<br>📌 ${r.destinacao}` : ''}${r.microhabitat ? ` · 🌿 ${r.microhabitat}` : ''}
+        ${r.obs ? `<br><em>${r.obs}</em>` : ''}
+      </div>
+      ${r.coord
+        ? `<div class="record-coord">📡 <span>${r.coord}</span></div>`
+        : '<div class="record-meta-secondary" style="font-size:10px">📍 sem coordenadas</div>'
+      }
         </div>
       </div>
       <div class="edit-panel" id="rec-edit-${idx}">
@@ -11613,13 +11835,18 @@ function atualizarOfflineBar() {
   try {
   const bar = document.getElementById('offline-bar');
   const msg = document.getElementById('offline-msg');
+  const badge = document.getElementById('offline-badge');
   if (!bar) return;
   if (!navigator.onLine) {
     bar.classList.add('show');
-    const pending = registros.filter(r => !r._synced).length;
-    msg.textContent = pending > 0
-      ? `Offline · ${pending} registro${pending>1?'s':''} aguardando sync`
-      : 'Offline · dados salvos localmente';
+    const total = registros.length + (bioRegistros ? bioRegistros.length : 0);
+    if (total > 0) {
+      if (badge) badge.textContent = 'OFFLINE';
+      msg.textContent = `${total} registro${total!==1?'s':''} salvo${total!==1?'s':''} no dispositivo`;
+    } else {
+      if (badge) badge.textContent = 'OFFLINE';
+      msg.textContent = 'Pronto para coletar sem conexão';
+    }
   } else {
     bar.classList.remove('show');
   }
@@ -11994,6 +12221,64 @@ function atualizarDtabBadge() {
     badge.style.display = total > 0 ? '' : 'none';
   }
 }
+
+/* ── Progress Steps do formulário manual ───────────────── */
+function atualizarProgressManual() {
+  try {
+    const ponto  = (document.getElementById('m-ponto') || {}).value || '';
+    const data   = (document.getElementById('m-data') || {}).value || '';
+    const metodo = (document.getElementById('m-metodo') || {}).value || '';
+    const esp    = (document.getElementById('m-especie') || {}).value || '';
+    const classe = (document.getElementById('m-classe') || {}).value || '';
+
+    const s1done = !!(ponto || data);
+    const s2done = !!metodo;
+    const s3done = !!esp;
+    const s4done = !!classe;
+
+    function setStep(n, done, active) {
+      const el = document.getElementById('fstep-' + n);
+      const cn = document.getElementById('fconn-' + n);
+      if (!el) return;
+      el.classList.toggle('done', done && !active);
+      el.classList.toggle('active', active);
+      if (cn) cn.classList.toggle('done', done);
+      const dot = el.querySelector('.form-step-dot');
+      if (dot && done && !active) dot.textContent = '✓';
+      else if (dot) dot.textContent = n;
+    }
+
+    // Determine active step
+    const steps = [s1done, s2done, s3done, s4done];
+    let active = 1;
+    for (let i = 0; i < steps.length; i++) {
+      if (!steps[i]) { active = i + 1; break; }
+      if (i === steps.length - 1) active = 4;
+    }
+
+    setStep(1, s1done, active === 1);
+    setStep(2, s2done, active === 2);
+    setStep(3, s3done, active === 3);
+    setStep(4, s4done, active === 4);
+  } catch(e) {}
+}
+
+// Wire up progress updates on manual form inputs
+document.addEventListener('DOMContentLoaded', function() {
+  ['m-ponto','m-data','m-metodo','m-especie','m-classe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', atualizarProgressManual);
+    if (el) el.addEventListener('change', atualizarProgressManual);
+  });
+  // Also update when navigating to manual panel
+  const origIrPara = window.irPara;
+  if (origIrPara) {
+    window.irPara = function(panel, btn) {
+      origIrPara(panel, btn);
+      if (panel === 'manual') setTimeout(atualizarProgressManual, 50);
+    };
+  }
+});
 
 </script>
 </body>
